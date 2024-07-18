@@ -1,0 +1,15 @@
+server:
+  port: 8888
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  application:
+    name: config-server
+  profiles:
+    active: native
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

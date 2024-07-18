@@ -1,0 +1,19 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    config:
+      uri: http://localhost:8888
+      fail-fast: true
+      retry:
+        maxAttempts: 3
+        initialInterval: 1000
+        multiplier: 1.2
+        maxInterval: 2000
