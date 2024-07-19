@@ -23,17 +23,17 @@ public class AppRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-//        template.dropCollection(Customer.class);
-//        template.createCollection(Customer.class);
-//
-//        Customer c1 = new Customer("smyku1232@wp.pl", passwordEncoder.encode("test1") , "Kamil", "Smyk");
-//        Customer c2 = new Customer("smyku1111232@wp.pl", passwordEncoder.encode("test11"), "Kamil", "Smyk");
-//        c1.setRoles(List.of(Role.CUSTOMER, Role.OPERATOR));
-//        c2.setRoles(List.of(Role.CUSTOMER));
-//        template.insert(c1);
-//        template.insert(c2);
+        template.dropCollection(Customer.class);
+        template.createCollection(Customer.class);
+        Customer c = Customer.builder()
+          .firstName("Kamil")
+          .lastName("Smyk")
+          .email("smyku1232@wp.pl")
+          .password(passwordEncoder.encode("test"))
+          .roles(List.of(Role.CUSTOMER))
+          .build();
 
-        System.out.println(customerService.findCustomerById("669a28a467d9c934cbdd6327"));
+        template.insert(c);
 
 
     }

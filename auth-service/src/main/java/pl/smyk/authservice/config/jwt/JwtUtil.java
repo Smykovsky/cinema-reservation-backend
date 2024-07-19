@@ -17,15 +17,16 @@ import java.util.function.Function;
 
 @Service
 public class JwtUtil {
-    @Value("${application.security.jwt.secret-key}")
-    private String secretKey;
+//    @Value("${application.security.jwt.secret-key}")
+//    private String secretKey;
+  public static final String SECRET = "5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437";
     @Value("${application.security.jwt.expiration}")
     private long jwtExpiration;
     @Value("${application.security.jwt.refresh-token.expiration}")
     private long refreshExpiration;
 
     private Key getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        byte[] keyBytes = Decoders.BASE64.decode(SECRET);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
@@ -65,7 +66,7 @@ public class JwtUtil {
                 .setClaims(extraClaims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 30))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -82,4 +83,8 @@ public class JwtUtil {
     public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
+
+  public void validateToken(final String token) {
+    Jwts.parserBuilder().setSigningKey(getSignInKey()).build().parseClaimsJws(token);
+  }
 }

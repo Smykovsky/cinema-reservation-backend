@@ -2,10 +2,8 @@ package pl.smyk.authservice.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import pl.smyk.authservice.config.jwt.JwtUtil;
 import pl.smyk.authservice.dto.AuthenticationResponse;
 import pl.smyk.authservice.dto.LoginRequest;
 import pl.smyk.authservice.dto.RegisterRequest;
@@ -21,9 +19,10 @@ import java.util.Optional;
 public class AuthController {
     private final AuthService authService;
     private final CustomerService customerService;
+  private final JwtUtil jwtUtil;
 
 
-    @PostMapping("/register")
+  @PostMapping("/register")
     public ResponseEntity<?> register (@RequestBody RegisterRequest request) {
         if (customerService.findByEmail(request.getEmail()).isPresent()) {
             return ResponseEntity.status(409).body("Użytkonik o podanym adresie email już istnieje!");
@@ -47,4 +46,10 @@ public class AuthController {
         AuthenticationResponse login = authService.login(request);
         return ResponseEntity.ok(login);
     }
+
+  @GetMapping("/validate")
+  public String validateToken(@RequestParam("token") String token) {
+    authService.validateToken(token);
+    return "Token is valid";
+  }
 }

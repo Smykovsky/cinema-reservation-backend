@@ -61,4 +61,7 @@ public class AuthService {
                 .message("Pomyślnie zalogowano!")
                 .build();
     }
+    public void validateToken(String token) {
+      jwtUtil.validateToken(token);
+    }
 }
