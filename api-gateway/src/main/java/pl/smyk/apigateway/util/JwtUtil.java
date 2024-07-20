@@ -9,14 +9,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
+import java.util.logging.Logger;
 
 @Component
 public class JwtUtil {
+  private static final Logger logger = Logger.getLogger(JwtUtil.class.getName());
+
   public static final String SECRET = "5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437";
 
   public void validateToken(final String token) {
     Jwts.parserBuilder().setSigningKey(getSignInKey()).build().parseClaimsJws(token);
   }
+
 
   private Key getSignInKey() {
     byte[] keyBytes = Decoders.BASE64.decode(SECRET);

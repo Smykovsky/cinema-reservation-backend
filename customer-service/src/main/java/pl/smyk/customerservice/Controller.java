@@ -9,16 +9,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/customer")
 public class Controller {
-    @Autowired
-    private PaymentServiceManagement paymentServiceManagement;
+//    @Autowired
+//    private PaymentServiceManagement paymentServiceManagement;
 
     @GetMapping("/test1")
     public String get() {
-        return paymentServiceManagement.get();
+     return "Udało się, token działą!";
     }
 
-    @GetMapping("/test2")
-    public String getTest() {
-        return paymentServiceManagement.getTest();
-    }
+//    @GetMapping("/test2")
+//    public String getTest() {
+//        return paymentServiceManagement.getTest();
+//    }
 }

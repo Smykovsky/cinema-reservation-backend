@@ -12,8 +12,11 @@ import org.springframework.web.server.ServerWebExchange;
 import pl.smyk.apigateway.util.JwtUtil;
 import reactor.core.publisher.Mono;
 
+import java.util.logging.Logger;
+
 @Component
 public class AuthenticationFilter extends AbstractGatewayFilterFactory<AuthenticationFilter.Config> {
+
 
   @Autowired
   private RouteValidator validator;
@@ -29,36 +32,29 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
 
   @Override
   public GatewayFilter apply(Config config) {
-    return (exchange, chain) -> {
+    return ((exchange, chain) -> {
       if (validator.isSecured.test(exchange.getRequest())) {
+        //header contains token or not
         if (!exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
-          return handleUnauthorized(exchange, "Missing authorization header");
+          throw new RuntimeException("missing authorization header");
         }
 
         String authHeader = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
           authHeader = authHeader.substring(7);
         }
-
         try {
-          System.out.println("probuje cos");
-          System.out.println(authHeader);
+//                    //REST call to AUTH service
+//                    template.getForObject("http://IDENTITY-SERVICE//validate?token" + authHeader, String.class);
           jwtUtil.validateToken(authHeader);
+
         } catch (Exception e) {
-          return handleUnauthorized(exchange, "Invalid or expired token");
+          System.out.println("invalid access...!");
+          throw new RuntimeException("un authorized access to application");
         }
       }
       return chain.filter(exchange);
-    };
-  }
-
-  private Mono<Void> handleUnauthorized(ServerWebExchange exchange, String message) {
-    ServerHttpResponse response = exchange.getResponse();
-    response.setStatusCode(HttpStatus.UNAUTHORIZED);
-    response.getHeaders().add(HttpHeaders.CONTENT_TYPE, "application/json");
-    String body = "{\"error\": \"" + message + "\"}";
-    DataBuffer buffer = response.bufferFactory().wrap(body.getBytes());
-    return response.writeWith(Mono.just(buffer));
+    });
   }
 
   public static class Config {

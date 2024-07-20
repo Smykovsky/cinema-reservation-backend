@@ -4,8 +4,6 @@ server:
 spring:
   application:
     name: api-gateway
-  profiles:
-    active: native
   cloud:
     gateway:
       routes:
@@ -15,12 +13,12 @@ spring:
             - Path=/api/customer/**
           filters:
             - AuthenticationFilter
+
         - id: payment-service
           uri: lb://payment-service
           predicates:
             - Path=/api/payment/**
-          filters:
-            - AuthenticationFilter
+
         - id: auth-service
           uri: lb://auth-service
           predicates:
@@ -37,3 +35,7 @@ eureka:
         initialInterval: 1000
         multiplier: 1.2
         maxInterval: 2000
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
