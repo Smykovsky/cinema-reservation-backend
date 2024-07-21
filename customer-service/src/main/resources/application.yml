@@ -15,11 +15,3 @@ spring:
     name: customer-service
   config:
     import: optional:configserver:http://localhost:8888
-
-application:
-  security:
-    jwt:
-      secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B597AVS24SDF2ASD3VSD4
-      expiration: 86400000 # a day
-      refresh-token:
-        expiration: 604800000 # 7 days

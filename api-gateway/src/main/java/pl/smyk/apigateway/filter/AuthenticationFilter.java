@@ -17,12 +17,11 @@ import java.util.logging.Logger;
 @Component
 public class AuthenticationFilter extends AbstractGatewayFilterFactory<AuthenticationFilter.Config> {
 
+  private static final Logger logger = Logger.getLogger(AuthenticationFilter.class.getName());
 
   @Autowired
   private RouteValidator validator;
 
-  //    @Autowired
-//    private RestTemplate template;
   @Autowired
   private JwtUtil jwtUtil;
 
@@ -32,30 +31,42 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
 
   @Override
   public GatewayFilter apply(Config config) {
-    return ((exchange, chain) -> {
+    return (exchange, chain) -> {
       if (validator.isSecured.test(exchange.getRequest())) {
-        //header contains token or not
         if (!exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
-          throw new RuntimeException("missing authorization header");
+          logger.warning("Missing authorization header");
+          return handleUnauthorized(exchange, "Missing authorization header");
         }
 
-        String authHeader = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
+        String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
           authHeader = authHeader.substring(7);
+        } else {
+          logger.warning("Authorization header does not start with Bearer");
+          return handleUnauthorized(exchange, "Invalid authorization header");
         }
-        try {
-//                    //REST call to AUTH service
-//                    template.getForObject("http://IDENTITY-SERVICE//validate?token" + authHeader, String.class);
-          jwtUtil.validateToken(authHeader);
 
+        try {
+          jwtUtil.validateToken(authHeader);
+          logger.info("Token validated successfully");
         } catch (Exception e) {
-          System.out.println("invalid access...!");
-          throw new RuntimeException("un authorized access to application");
+          logger.severe("Invalid or expired token: " + e.getMessage());
+          return handleUnauthorized(exchange, "Invalid or expired token");
         }
       }
       return chain.filter(exchange);
-    });
+    };
   }
+
+  private Mono<Void> handleUnauthorized(ServerWebExchange exchange, String message) {
+    ServerHttpResponse response = exchange.getResponse();
+    response.setStatusCode(HttpStatus.UNAUTHORIZED);
+    response.getHeaders().add(HttpHeaders.CONTENT_TYPE, "application/json");
+    String body = "{\"error\": \"" + message + "\"}";
+    DataBuffer buffer = response.bufferFactory().wrap(body.getBytes());
+    return response.writeWith(Mono.just(buffer));
+  }
+
 
   public static class Config {
 

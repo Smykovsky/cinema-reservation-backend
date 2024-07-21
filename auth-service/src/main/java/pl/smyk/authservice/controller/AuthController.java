@@ -19,7 +19,6 @@ import java.util.Optional;
 public class AuthController {
     private final AuthService authService;
     private final CustomerService customerService;
-  private final JwtUtil jwtUtil;
 
 
   @PostMapping("/register")

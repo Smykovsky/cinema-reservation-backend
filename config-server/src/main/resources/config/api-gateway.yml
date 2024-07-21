@@ -7,17 +7,19 @@ spring:
   cloud:
     gateway:
       routes:
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/payment/**
+          filters:
+            - AuthenticationFilter
+
         - id: customer-service
           uri: lb://customer-service
           predicates:
             - Path=/api/customer/**
           filters:
             - AuthenticationFilter
-
-        - id: payment-service
-          uri: lb://payment-service
-          predicates:
-            - Path=/api/payment/**
 
         - id: auth-service
           uri: lb://auth-service
