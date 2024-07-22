@@ -13,7 +13,7 @@ public class Controller {
     @Autowired
     private AuthServiceClient authServiceClient;
 
-    @GetMapping("/test1")
+    @GetMapping("/user")
     public String get(@RequestHeader("Authorization") String authorizationHeader) {
      return authServiceClient.getUser(authorizationHeader);
     }
