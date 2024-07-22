@@ -14,6 +14,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.logging.Logger;
 
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+
 @Component
 public class AuthenticationFilter extends AbstractGatewayFilterFactory<AuthenticationFilter.Config> {
 
@@ -33,14 +35,16 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
   public GatewayFilter apply(Config config) {
     return (exchange, chain) -> {
       if (validator.isSecured.test(exchange.getRequest())) {
-        if (!exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
+        if (!exchange.getRequest().getHeaders().containsKey(AUTHORIZATION)) {
           logger.warning("Missing authorization header");
           return handleUnauthorized(exchange, "Missing authorization header");
         }
 
-        String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-          authHeader = authHeader.substring(7);
+        String authHeader = exchange.getRequest().getHeaders().getFirst(AUTHORIZATION);
+        if (authHeader != null) {
+          if (authHeader.startsWith("Bearer ")) {
+            authHeader = authHeader.substring(7);
+          }
         } else {
           logger.warning("Authorization header does not start with Bearer");
           return handleUnauthorized(exchange, "Invalid authorization header");

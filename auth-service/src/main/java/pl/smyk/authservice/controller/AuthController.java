@@ -2,15 +2,21 @@ package pl.smyk.authservice.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 import pl.smyk.authservice.config.jwt.JwtUtil;
 import pl.smyk.authservice.dto.AuthenticationResponse;
+import pl.smyk.authservice.dto.CustomerDto;
 import pl.smyk.authservice.dto.LoginRequest;
 import pl.smyk.authservice.dto.RegisterRequest;
+import pl.smyk.authservice.mapper.CustomerMapper;
 import pl.smyk.authservice.model.Customer;
 import pl.smyk.authservice.service.AuthService;
 import pl.smyk.authservice.service.CustomerService;
 
+import java.util.HashMap;
+import java.util.Objects;
 import java.util.Optional;
 
 @RestController
@@ -19,6 +25,7 @@ import java.util.Optional;
 public class AuthController {
     private final AuthService authService;
     private final CustomerService customerService;
+    private final JwtUtil jwtUtil;
 
 
   @PostMapping("/register")
@@ -50,5 +57,14 @@ public class AuthController {
   public String validateToken(@RequestParam("token") String token) {
     authService.validateToken(token);
     return "Token is valid";
+  }
+
+  @GetMapping("/user")
+    public String getUser(@RequestHeader("Authorization") String authorizationHeader) {
+      String token = authorizationHeader.substring(7);
+      String email = jwtUtil.extractUsername(token);
+      Customer customer = customerService.findByEmail(email).orElseThrow();
+      CustomerDto customerDto = CustomerMapper.INSTANCE.customerToCustomerDto(customer);
+      return customerDto.toString();
   }
 }
