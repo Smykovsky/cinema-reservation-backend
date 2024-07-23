@@ -1,7 +1,6 @@
-package pl.smyk.authservice.dto;
+package pl.smyk.customerservice.dto;
 
 import lombok.Data;
-import pl.smyk.authservice.model.Role;
 
 import java.util.List;
 

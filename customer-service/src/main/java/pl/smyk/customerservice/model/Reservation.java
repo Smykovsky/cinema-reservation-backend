@@ -17,7 +17,6 @@ public class Reservation {
     @MongoId
     private String id;
     private String customerEmail;
-    private String name;
     private Long roomNumber;
     private Movie movie;
     private List<Seat> seats;

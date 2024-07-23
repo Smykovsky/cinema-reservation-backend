@@ -2,8 +2,6 @@ package pl.smyk.authservice.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 import pl.smyk.authservice.config.jwt.JwtUtil;
 import pl.smyk.authservice.dto.AuthenticationResponse;
@@ -15,8 +13,6 @@ import pl.smyk.authservice.model.Customer;
 import pl.smyk.authservice.service.AuthService;
 import pl.smyk.authservice.service.CustomerService;
 
-import java.util.HashMap;
-import java.util.Objects;
 import java.util.Optional;
 
 @RestController
@@ -60,11 +56,15 @@ public class AuthController {
   }
 
   @GetMapping("/user")
-    public String getUser(@RequestHeader("Authorization") String authorizationHeader) {
+    public ResponseEntity<?> getCustomerData(@RequestHeader("Authorization") String authorizationHeader) {
+      if (authorizationHeader == null && !authorizationHeader.startsWith("Bearer ")) {
+          return ResponseEntity.status(401).body("Inavlid token!");
+      }
+
       String token = authorizationHeader.substring(7);
       String email = jwtUtil.extractUsername(token);
       Customer customer = customerService.findByEmail(email).orElseThrow();
       CustomerDto customerDto = CustomerMapper.INSTANCE.customerToCustomerDto(customer);
-      return customerDto.toString();
+      return ResponseEntity.ok(customerDto);
   }
 }

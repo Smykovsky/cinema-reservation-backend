@@ -5,7 +5,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import pl.smyk.authservice.mapper.CustomerMapper;
 import pl.smyk.authservice.model.Customer;
 import pl.smyk.authservice.model.Role;
 import pl.smyk.authservice.service.CustomerService;
