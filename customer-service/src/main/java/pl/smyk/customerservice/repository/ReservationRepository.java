@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ReservationRepository extends MongoRepository<Reservation, String> {
-    List<Reservation> findByMoviePlayDateTimeBetween(LocalDateTime before, LocalDateTime after);
     Optional<Reservation> findByCustomerEmail(String customerEmail);
 
 }

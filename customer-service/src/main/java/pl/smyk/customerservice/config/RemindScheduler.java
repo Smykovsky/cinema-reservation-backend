@@ -17,14 +17,14 @@ public class RemindScheduler {
 
     @Scheduled(cron = "0 0 9 * * ?")
     public void sendReminders() {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime tomorrow = now.plusDays(1);
-
-        List<Reservation> reservations = reservationRepository.findByMoviePlayDateTimeBetween(tomorrow.toLocalDate().atStartOfDay(), tomorrow.toLocalDate().atTime(23, 59, 59));
-
-        for (Reservation reservation : reservations) {
-            System.out.println("Reminder for: " + reservation.getCustomerEmail() + "for reservation: " + reservation.getId());
-            //email reminder
-        }
+//        LocalDateTime now = LocalDateTime.now();
+//        LocalDateTime tomorrow = now.plusDays(1);
+//
+//        List<Reservation> reservations = reservationRepository.findByMoviePlayDateTimesBetween(tomorrow.toLocalDate().atStartOfDay(), tomorrow.toLocalDate().atTime(23, 59, 59));
+//
+//        for (Reservation reservation : reservations) {
+//            System.out.println("Reminder for: " + reservation.getCustomerEmail() + "for reservation: " + reservation.getId());
+//            //email reminder
+//        }
     }
 }

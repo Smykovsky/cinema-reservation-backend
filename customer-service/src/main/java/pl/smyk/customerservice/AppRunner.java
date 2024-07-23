@@ -7,12 +7,18 @@ import org.springframework.stereotype.Component;
 import pl.smyk.customerservice.mapper.MovieMapper;
 import pl.smyk.customerservice.mapper.ReservationMapper;
 import pl.smyk.customerservice.model.Movie;
+import pl.smyk.customerservice.model.PlayTime;
 import pl.smyk.customerservice.model.Reservation;
 import pl.smyk.customerservice.repository.MovieRepository;
 import pl.smyk.customerservice.repository.ReservationRepository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
+
+import static pl.smyk.customerservice.model.PlayTime.HOUR_12;
+import static pl.smyk.customerservice.model.PlayTime.HOUR_18;
 
 @Component
 public class AppRunner implements CommandLineRunner {
@@ -33,35 +39,35 @@ public class AppRunner implements CommandLineRunner {
           .title("Bez litości")
           .genre("Akcja")
           .description("Bez litości opis")
-          .playDateTime(LocalDateTime.of(2024, 7, 24, 18, 0))
+          .playDates(List.of(LocalDate.of(2024, 7, 2)))
           .build();
 
         Movie m2 = Movie.builder()
           .title("Bez litości2")
           .genre("Akcja")
           .description("Bez litości2 opis")
-          .playDateTime(LocalDateTime.of(2024, 9, 10, 20, 30))
+          .playDates(List.of(LocalDate.of(2024, 7, 2)))
           .build();
 
         Movie m3 = Movie.builder()
                 .title("Zabójcze Wesele")
                 .genre("Komedia")
                 .description("Zabójcze wesele opis")
-                .playDateTime(LocalDateTime.of(2024, 9, 10, 20, 30))
+                .playDates(List.of(LocalDate.of(2024, 7, 2)))
                 .build();
 
         Movie m4 = Movie.builder()
                 .title("Geostorm")
                 .genre("Akcja")
                 .description("Geostorm opis")
-                .playDateTime(LocalDateTime.of(2024, 9, 10, 20, 30))
+                .playDates(List.of(LocalDate.of(2024, 7, 2)))
                 .build();
 
         Movie m5 = Movie.builder()
                 .title("Szybcy i Wścielki")
                 .genre("Akcja")
                 .description("Szybcy i Wścielki opis")
-                .playDateTime(LocalDateTime.of(2024, 9, 10, 20, 30))
+                .playDates(List.of(LocalDate.of(2024, 7, 2)))
                 .build();
 
         movieRepository.save(m1);
@@ -73,12 +79,14 @@ public class AppRunner implements CommandLineRunner {
         Reservation r1 = Reservation.builder()
                 .customerEmail("smyku1232@wp.pl")
                 .movie(m1)
+                .selectedPlayTime(LocalDateTime.of(LocalDate.of(2024, 8, 1), HOUR_18.getPlayTime()))
                 .roomNumber(3L)
                 .seats(List.of(Reservation.Seat.builder().row(1).placeNumber(10).build())).build();
 
         Reservation r2 = Reservation.builder()
                 .customerEmail("smyku1232@wp.pl")
                 .movie(m2)
+                .selectedPlayTime(LocalDateTime.of(LocalDate.of(2024, 9, 10), HOUR_12.getPlayTime()))
                 .roomNumber(7L)
                 .seats(List.of(Reservation.Seat.builder().row(3).placeNumber(2).build(), Reservation.Seat.builder().row(3).placeNumber(3).build()))
                 .build();
@@ -88,7 +96,7 @@ public class AppRunner implements CommandLineRunner {
 
 //        System.out.println(reservationRepository.findByMoviePlayDateTimeBetween(LocalDateTime.of(2024,9, 10, 0, 0), LocalDateTime.of(2024, 9, 13, 0, 0 )));
 
-        System.out.println(ReservationMapper.INSTANCE.reservationToReservationDto(r1));
+        System.out.println(ReservationMapper.INSTANCE.reservationToReservationDto(r2));
 
         System.out.println(MovieMapper.INSTANCE.movieToMovieDto(m1));
     }
