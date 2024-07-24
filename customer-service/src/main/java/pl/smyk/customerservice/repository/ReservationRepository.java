@@ -9,5 +9,7 @@ import java.util.Optional;
 
 public interface ReservationRepository extends MongoRepository<Reservation, String> {
     Optional<Reservation> findByCustomerEmail(String customerEmail);
+    List<Reservation> findByRoomNumberAndSelectedPlayTime(Long roomNumber, LocalDateTime selectedPlayTime);
+    Reservation findByIdAndCustomerEmail(String id, String customerEmail);
 
 }

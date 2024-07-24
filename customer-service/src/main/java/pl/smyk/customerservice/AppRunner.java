@@ -1,9 +1,12 @@
 package pl.smyk.customerservice;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Component;
+import pl.smyk.customerservice.dto.MovieDto;
+import pl.smyk.customerservice.dto.SeatDto;
 import pl.smyk.customerservice.mapper.MovieMapper;
 import pl.smyk.customerservice.mapper.ReservationMapper;
 import pl.smyk.customerservice.model.Movie;
@@ -11,6 +14,9 @@ import pl.smyk.customerservice.model.PlayTime;
 import pl.smyk.customerservice.model.Reservation;
 import pl.smyk.customerservice.repository.MovieRepository;
 import pl.smyk.customerservice.repository.ReservationRepository;
+import pl.smyk.customerservice.service.MovieManagementService;
+import pl.smyk.customerservice.service.MovieService;
+import pl.smyk.customerservice.service.ReservationService;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -27,6 +33,12 @@ public class AppRunner implements CommandLineRunner {
     @Autowired
     private ReservationRepository reservationRepository;
     @Autowired
+    private ReservationService reservationService;
+    @Autowired
+    private MovieService movieService;
+    @Autowired
+    private MovieManagementService movieManagementService;
+    @Autowired
     private MovieRepository movieRepository;
     @Override
     public void run(String... args) throws Exception {
@@ -39,7 +51,7 @@ public class AppRunner implements CommandLineRunner {
           .title("Bez litości")
           .genre("Akcja")
           .description("Bez litości opis")
-          .playDates(List.of(LocalDate.of(2024, 7, 2)))
+          .playDates(List.of(LocalDate.of(2024, 7, 1)))
           .build();
 
         Movie m2 = Movie.builder()
@@ -53,21 +65,21 @@ public class AppRunner implements CommandLineRunner {
                 .title("Zabójcze Wesele")
                 .genre("Komedia")
                 .description("Zabójcze wesele opis")
-                .playDates(List.of(LocalDate.of(2024, 7, 2)))
+                .playDates(List.of(LocalDate.of(2024, 7, 3)))
                 .build();
 
         Movie m4 = Movie.builder()
                 .title("Geostorm")
                 .genre("Akcja")
                 .description("Geostorm opis")
-                .playDates(List.of(LocalDate.of(2024, 7, 2)))
+                .playDates(List.of(LocalDate.of(2024, 7, 4)))
                 .build();
 
         Movie m5 = Movie.builder()
                 .title("Szybcy i Wścielki")
                 .genre("Akcja")
                 .description("Szybcy i Wścielki opis")
-                .playDates(List.of(LocalDate.of(2024, 7, 2)))
+                .playDates(List.of(LocalDate.of(2024, 7, 5)))
                 .build();
 
         movieRepository.save(m1);
@@ -94,10 +106,23 @@ public class AppRunner implements CommandLineRunner {
         reservationRepository.save(r1);
         reservationRepository.save(r2);
 
-//        System.out.println(reservationRepository.findByMoviePlayDateTimeBetween(LocalDateTime.of(2024,9, 10, 0, 0), LocalDateTime.of(2024, 9, 13, 0, 0 )));
-
         System.out.println(ReservationMapper.INSTANCE.reservationToReservationDto(r2));
 
         System.out.println(MovieMapper.INSTANCE.movieToMovieDto(m1));
+
+        LocalDateTime ldt = LocalDateTime.of(LocalDate.of(2024, 9, 10), HOUR_12.getPlayTime());
+        SeatDto seatDto = new SeatDto(3, 3);
+        System.out.println(seatDto);
+
+
+        System.out.println(reservationService.getReservationsAtSelectedPlayTime(7L, ldt));
+        System.out.println(reservationService.getOccupiedSeatsByRoomNumberAndSelectedPlayTime(7L, ldt));
+        System.out.println(reservationService.isSeatOccupied(7L, ldt, seatDto));
+        System.out.println(reservationService.getReservationByIdAndCustomerEmailIfExists("66a0d62bc810a642fa02a1df", "smyku1232@wp.pl"));
+
+        LocalDate ld1 = LocalDate.of(2025, 7, 2);
+        LocalDate ld2 = LocalDate.of(2025, 7, 2);
+
+
     }
 }

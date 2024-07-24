@@ -24,7 +24,7 @@ public class ReservationController {
             return ResponseEntity.notFound().build();
         }
 
-        List<ReservationDto> reservationsByCustomerEmail = reservationService.findReservationsByCustomerEmail(customer.getEmail());
+        List<ReservationDto> reservationsByCustomerEmail = reservationService.getReservationsByCustomerEmail(customer.getEmail());
 
         return ResponseEntity.ok(reservationsByCustomerEmail);
     }

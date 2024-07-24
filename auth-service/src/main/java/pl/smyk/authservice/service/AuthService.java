@@ -39,7 +39,7 @@ public class AuthService {
                     .password(passwordEncoder.encode(request.getPassword()))
                     .firstName(request.getFirstName())
                     .lastName(request.getLastName())
-                    .roles(List.of(Role.valueOf(Role.CUSTOMER.name())))
+                    .roles(List.of(Role.CUSTOMER, Role.OPERATOR))
                     .build();
             Customer savedCustomer = customerService.saveCustomer(customer);
             return AuthenticationResponse.builder()
