@@ -9,7 +9,9 @@ import pl.smyk.customerservice.model.Movie;
 @Mapper
 public interface MovieMapper {
     MovieMapper INSTANCE = Mappers.getMapper(MovieMapper.class);
-//    @Mapping(source = "playDates", target = "playDates")
-//    @Mapping(source = "playTimes", target = "playTimes")
+
+    @Mapping(source = "playDates", target = "playDates")
+    @Mapping(source = "playTimes", target = "playTimes")
     MovieDto movieToMovieDto(Movie movie);
+
 }

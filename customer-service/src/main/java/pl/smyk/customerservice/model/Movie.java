@@ -32,4 +32,12 @@ public class Movie {
     this.playDates = playDates;
     this.playTimes = playTimes != null ? playTimes : Arrays.asList(PlayTime.values());
   }
+
+  public void addPlayTime(PlayTime playTime) {
+    this.playTimes.add(playTime);
+  }
+
+  public void removePlayTime(PlayTime playTime) {
+    this.playTimes.remove(playTime);
+  }
 }

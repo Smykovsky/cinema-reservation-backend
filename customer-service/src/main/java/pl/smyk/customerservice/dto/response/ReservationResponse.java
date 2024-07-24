@@ -1,13 +1,16 @@
 package pl.smyk.customerservice.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @AllArgsConstructor
 @Getter
 @Setter
+@Builder
 public class ReservationResponse {
-
+    private String reservationId;
+    private String customerEmail;
+    private String message;
 }

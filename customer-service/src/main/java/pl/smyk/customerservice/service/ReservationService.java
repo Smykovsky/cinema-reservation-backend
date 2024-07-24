@@ -4,8 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pl.smyk.customerservice.dto.ReservationDto;
 import pl.smyk.customerservice.dto.SeatDto;
+import pl.smyk.customerservice.dto.request.ReservationRequest;
 import pl.smyk.customerservice.dto.response.ReservationResponse;
+import pl.smyk.customerservice.feignClient.AuthServiceClient;
+import pl.smyk.customerservice.mapper.MovieMapper;
 import pl.smyk.customerservice.mapper.ReservationMapper;
+import pl.smyk.customerservice.model.Movie;
 import pl.smyk.customerservice.model.Reservation;
 import pl.smyk.customerservice.repository.ReservationRepository;
 
@@ -17,6 +21,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ReservationService {
     private final ReservationRepository reservationRepository;
+    private final AuthServiceClient authServiceClient;
+    private final MovieService movieService;
 
 
     public void saveReservation(Reservation reservation){
@@ -75,10 +81,39 @@ public class ReservationService {
         return false;
     }
 
-//    public ReservationResponse createReservation() {
-//        //handle reservation bussines logic
-//        return new ReservationResponse();
-//    }
+    public ReservationResponse createReservation(ReservationRequest reservationRequest) {
+        LocalDateTime selectedLocalDatetime = LocalDateTime.of(reservationRequest.getSelectedDate(), reservationRequest.getSelectedTime().getPlayTime());
+        boolean isOccupied = isSeatsOccupied(reservationRequest.getRoomNumber(), selectedLocalDatetime, reservationRequest.getSeats());
+        if (isOccupied) {
+            return ReservationResponse.builder()
+                    .message("Selected seats are currently occupied!")
+                    .build();
+        }
+
+        Movie movie = movieService.findById(reservationRequest.getMovieId());
+
+        if (!movie.getPlayDates().contains(reservationRequest.getSelectedDate()) && !movie.getPlayTimes().contains(reservationRequest.getSelectedTime())) {
+            return ReservationResponse.builder()
+                    .message("We are not screening this movie at this date time!")
+                    .build();
+        }
+
+        Reservation newReservation = Reservation.builder()
+                .customerEmail(reservationRequest.getCustomerEmail())
+                .roomNumber(reservationRequest.getRoomNumber())
+                .movie(movie)
+                .selectedPlayTime(selectedLocalDatetime)
+                .seats(Reservation.Seat.seatDtoToSeat(reservationRequest.getSeats()))
+                .build();
+
+        saveReservation(newReservation);
+
+        return ReservationResponse.builder()
+                .reservationId(newReservation.getId())
+                .customerEmail(reservationRequest.getCustomerEmail())
+                .message("Succesfully created reservation!")
+                .build();
+    }
 
 
 }

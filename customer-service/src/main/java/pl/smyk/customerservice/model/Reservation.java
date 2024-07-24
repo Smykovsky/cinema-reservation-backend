@@ -9,8 +9,10 @@ import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
+import pl.smyk.customerservice.dto.SeatDto;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Document(collection = "reservation")
@@ -37,5 +39,15 @@ public class Reservation {
         @Min(value = 1, message = "Place number minimum 1")
         @Max(value = 15, message = "Place number maximum 15")
         private int placeNumber;
+
+
+        public static List<Seat> seatDtoToSeat(List<SeatDto> seatDtoList) {
+            return seatDtoList.stream()
+                    .map(dto -> Seat.builder()
+                            .row(dto.getRow())
+                            .placeNumber(dto.getPlaceNumber())
+                            .build())
+                    .toList();
+        }
     }
 }

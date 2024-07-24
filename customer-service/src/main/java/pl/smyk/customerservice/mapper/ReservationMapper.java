@@ -10,8 +10,8 @@ import pl.smyk.customerservice.model.Reservation;
 public interface ReservationMapper {
     ReservationMapper INSTANCE = Mappers.getMapper(ReservationMapper.class);
 
-//    @Mapping(source = "seats", target ="seats")
-//    @Mapping(source = "movie", target ="movie")
+    @Mapping(source = "seats", target ="seats")
+    @Mapping(source = "movie", target ="movie")
     ReservationDto reservationToReservationDto(Reservation reservation);
 
 }

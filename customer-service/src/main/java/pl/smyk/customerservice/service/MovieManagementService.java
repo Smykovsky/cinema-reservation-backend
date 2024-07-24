@@ -5,8 +5,10 @@ import org.springframework.stereotype.Service;
 import pl.smyk.customerservice.dto.MovieDto;
 import pl.smyk.customerservice.mapper.MovieMapper;
 import pl.smyk.customerservice.model.Movie;
+import pl.smyk.customerservice.model.PlayTime;
 import pl.smyk.customerservice.repository.MovieRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -53,4 +55,38 @@ public class MovieManagementService {
     }
 
     //delete movie
+    public void deleteMovie(String movieId) {
+        Movie movie = findById(movieId);
+        if (movie == null) {
+            return;
+        }
+
+        movieRepository.delete(movie);
+    }
+
+    public void addPlayTimesToMovie(String movieId, List<PlayTime> playTimes) {
+        Movie movie = findById(movieId);
+        if (movie == null) {
+            return;
+        }
+
+        for (PlayTime playTime : playTimes) {
+            movie.addPlayTime(playTime);
+        }
+
+        saveMovie(movie);
+    }
+
+    public void removePlayTimesFromMovie(String movieId, List<PlayTime> playTimes) {
+        Movie movie = findById(movieId);
+        if (movie == null) {
+            return;
+        }
+
+        for (PlayTime playTime : playTimes) {
+            movie.removePlayTime(playTime);
+        }
+
+        saveMovie(movie);
+    }
 }

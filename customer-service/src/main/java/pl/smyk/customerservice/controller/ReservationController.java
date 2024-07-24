@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pl.smyk.customerservice.dto.CustomerDto;
 import pl.smyk.customerservice.dto.ReservationDto;
+import pl.smyk.customerservice.dto.request.ReservationRequest;
 import pl.smyk.customerservice.feignClient.AuthServiceClient;
 import pl.smyk.customerservice.service.ReservationService;
 
@@ -28,4 +29,9 @@ public class ReservationController {
 
         return ResponseEntity.ok(reservationsByCustomerEmail);
     }
+
+//    @PostMapping("/reservation")
+//    public ResponseEntity<?> createReservation(@RequestHeader("Authorization") String authorizationHeader, @RequestBody ReservationRequest request) {
+//
+//    }
 }
