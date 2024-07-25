@@ -92,7 +92,7 @@ public class ReservationService {
 
         Movie movie = movieService.findById(reservationRequest.getMovieId());
 
-        if (!movie.getPlayDates().contains(reservationRequest.getSelectedDate()) && !movie.getPlayTimes().contains(reservationRequest.getSelectedTime())) {
+        if (!movie.getPlayDates().contains(reservationRequest.getSelectedDate()) || !movie.getPlayTimes().contains(reservationRequest.getSelectedTime())) {
             return ReservationResponse.builder()
                     .message("We are not screening this movie at this date time!")
                     .build();
@@ -100,7 +100,7 @@ public class ReservationService {
 
         Reservation newReservation = Reservation.builder()
                 .customerEmail(reservationRequest.getCustomerEmail())
-                .roomNumber(reservationRequest.getRoomNumber())
+                .roomNumber(movie.getPlayingRoom())
                 .movie(movie)
                 .selectedPlayTime(selectedLocalDatetime)
                 .seats(Reservation.Seat.seatDtoToSeat(reservationRequest.getSeats()))
@@ -114,6 +114,4 @@ public class ReservationService {
                 .message("Succesfully created reservation!")
                 .build();
     }
-
-
 }

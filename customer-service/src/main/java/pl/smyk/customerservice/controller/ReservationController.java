@@ -6,7 +6,9 @@ import org.springframework.web.bind.annotation.*;
 import pl.smyk.customerservice.dto.CustomerDto;
 import pl.smyk.customerservice.dto.ReservationDto;
 import pl.smyk.customerservice.dto.request.ReservationRequest;
+import pl.smyk.customerservice.dto.response.ReservationResponse;
 import pl.smyk.customerservice.feignClient.AuthServiceClient;
+import pl.smyk.customerservice.mapper.ReservationMapper;
 import pl.smyk.customerservice.service.ReservationService;
 
 import java.util.List;
@@ -30,8 +32,16 @@ public class ReservationController {
         return ResponseEntity.ok(reservationsByCustomerEmail);
     }
 
-//    @PostMapping("/reservation")
-//    public ResponseEntity<?> createReservation(@RequestHeader("Authorization") String authorizationHeader, @RequestBody ReservationRequest request) {
-//
-//    }
+    @PostMapping("/reservation")
+    public ResponseEntity<?> createReservation(@RequestHeader("Authorization") String authorizationHeader, @RequestBody ReservationRequest request) {
+        CustomerDto customer = authServiceClient.getCustomer(authorizationHeader);
+        if (customer == null) {
+            return ResponseEntity.status(404).body("User not found!");
+        }
+        request.setCustomerEmail(customer.getEmail());
+
+        ReservationResponse response = reservationService.createReservation(request);
+
+        return ResponseEntity.ok(response);
+    }
 }

@@ -19,6 +19,7 @@ public class MovieDto {
     private String title;
     private String genre;
     private String description;
+    private Long playingRoom;
     private List<LocalDate> playDates;
     private List<PlayTime> playTimes;
 }
