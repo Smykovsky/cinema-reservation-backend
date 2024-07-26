@@ -30,6 +30,11 @@ public class MovieService {
         return null;
     }
 
+    public List<MovieDto> getAllMovies() {
+      List <Movie> movieList = movieRepository.findAll();
+      return movieList.stream().map(MovieMapper.INSTANCE::movieToMovieDto).collect(Collectors.toList());
+    }
+
     public List<MovieDto> getMoviesByPlayDatesBetween(LocalDate start, LocalDate end) {
         List<Movie> movies = movieRepository.findByPlayDatesBetween(start, end);
         return movies.stream().map(MovieMapper.INSTANCE::movieToMovieDto).toList();
