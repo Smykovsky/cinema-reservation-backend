@@ -39,6 +39,7 @@ public class Reservation {
         @Min(value = 1, message = "Place number minimum 1")
         @Max(value = 15, message = "Place number maximum 15")
         private int placeNumber;
+        private final Double price = 40.0;
 
 
         public static List<Seat> seatDtoToSeat(List<SeatDto> seatDtoList) {
