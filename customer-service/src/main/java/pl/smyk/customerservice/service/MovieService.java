@@ -22,7 +22,7 @@ public class MovieService {
         return movieRepository.findById(id).orElseThrow();
     }
 
-    public MovieDto getMovieDetails(String id) {
+    public MovieDto getMovieById(String id) {
         Movie movie = findById(id);
         if (movie != null) {
             return MovieMapper.INSTANCE.movieToMovieDto(movie);
@@ -44,5 +44,10 @@ public class MovieService {
         List<Movie> movies = movieRepository.findByGenre(genre);
         return movies.stream().map(MovieMapper.INSTANCE::movieToMovieDto).toList();
     }
+
+  public List<MovieDto> getMoviesByTitlePhrase(String title) {
+    List<Movie> movies = movieRepository.findAllByTitleContainingIgnoreCase(title);
+    return movies.stream().map(MovieMapper.INSTANCE::movieToMovieDto).toList();
+  }
 
 }

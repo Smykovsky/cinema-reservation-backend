@@ -24,6 +24,8 @@ public class ReservationService {
     private final AuthServiceClient authServiceClient;
     private final MovieService movieService;
 
+    private final Double SEAT_PRICE = 40.0;
+
 
     public void saveReservation(Reservation reservation){
         reservationRepository.save(reservation);
@@ -31,6 +33,11 @@ public class ReservationService {
 
     public Reservation findById(String id) {
         return reservationRepository.findById(id).orElseThrow();
+    }
+
+    public ReservationDto getReservationById(String id) {
+      Reservation reservation = findById(id);
+      return ReservationMapper.INSTANCE.reservationToReservationDto(reservation);
     }
 
     public List<ReservationDto> getReservationsByCustomerEmail(String customerEmail) {
@@ -83,20 +90,24 @@ public class ReservationService {
 
     public ReservationResponse createReservation(ReservationRequest reservationRequest) {
         LocalDateTime selectedLocalDatetime = LocalDateTime.of(reservationRequest.getSelectedDate(), reservationRequest.getSelectedTime().getPlayTime());
-        boolean isOccupied = isSeatsOccupied(reservationRequest.getRoomNumber(), selectedLocalDatetime, reservationRequest.getSeats());
+
+        Movie movie = movieService.findById(reservationRequest.getMovieId());
+
+        if (!movie.getPlayDates().contains(reservationRequest.getSelectedDate()) || !movie.getPlayTimes().contains(reservationRequest.getSelectedTime())) {
+          return ReservationResponse.builder()
+            .message("We are not screening this movie at this date time!")
+            .build();
+        }
+
+        boolean isOccupied = isSeatsOccupied(movie.getPlayingRoom(), selectedLocalDatetime, reservationRequest.getSeats());
+        System.out.println(isOccupied);
         if (isOccupied) {
             return ReservationResponse.builder()
                     .message("Selected seats are currently occupied!")
                     .build();
         }
 
-        Movie movie = movieService.findById(reservationRequest.getMovieId());
 
-        if (!movie.getPlayDates().contains(reservationRequest.getSelectedDate()) || !movie.getPlayTimes().contains(reservationRequest.getSelectedTime())) {
-            return ReservationResponse.builder()
-                    .message("We are not screening this movie at this date time!")
-                    .build();
-        }
 
         Reservation newReservation = Reservation.builder()
                 .customerEmail(reservationRequest.getCustomerEmail())
@@ -104,6 +115,7 @@ public class ReservationService {
                 .movie(movie)
                 .selectedPlayTime(selectedLocalDatetime)
                 .seats(Reservation.Seat.seatDtoToSeat(reservationRequest.getSeats()))
+                .totalPrice(reservationRequest.getSeats().size() * SEAT_PRICE)
                 .build();
 
         saveReservation(newReservation);

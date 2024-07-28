@@ -8,7 +8,6 @@ import pl.smyk.customerservice.dto.ReservationDto;
 import pl.smyk.customerservice.dto.request.ReservationRequest;
 import pl.smyk.customerservice.dto.response.ReservationResponse;
 import pl.smyk.customerservice.feignClient.AuthServiceClient;
-import pl.smyk.customerservice.mapper.ReservationMapper;
 import pl.smyk.customerservice.service.ReservationService;
 
 import java.util.List;
@@ -24,12 +23,24 @@ public class ReservationController {
     public ResponseEntity<?> getLoggedUserReservations(@RequestHeader("Authorization") String authorizationHeader) {
         CustomerDto customer = authServiceClient.getCustomer(authorizationHeader);
         if (customer == null) {
-            return ResponseEntity.notFound().build();
+          return ResponseEntity.status(404).body("User not found");
         }
 
         List<ReservationDto> reservationsByCustomerEmail = reservationService.getReservationsByCustomerEmail(customer.getEmail());
 
         return ResponseEntity.ok(reservationsByCustomerEmail);
+    }
+
+    @GetMapping("{id}")
+    public ResponseEntity<?> getLoggedUserReservationById(@RequestHeader("Authorization") String authorizationHeader, @PathVariable String id) {
+        CustomerDto customer = authServiceClient.getCustomer(authorizationHeader);
+        if (customer == null) {
+          return ResponseEntity.status(404).body("User not found");
+        }
+
+        ReservationDto reservationDto = reservationService.getReservationById(id);
+
+        return ResponseEntity.ok(reservationDto);
     }
 
     @PostMapping("/reservation")

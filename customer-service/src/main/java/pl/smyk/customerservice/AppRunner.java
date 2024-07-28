@@ -53,6 +53,7 @@ public class AppRunner implements CommandLineRunner {
           .title("Bez litości")
           .genre("Akcja")
           .description("Bez litości opis")
+          .playingRoom(4L)
           .playDates(List.of(LocalDate.of(2024, 7, 1)))
           .build();
 
@@ -60,6 +61,7 @@ public class AppRunner implements CommandLineRunner {
           .title("Bez litości2")
           .genre("Akcja")
           .description("Bez litości2 opis")
+          .playingRoom(7L)
           .playDates(List.of(LocalDate.of(2024, 7, 2)))
           .build();
 
@@ -67,6 +69,7 @@ public class AppRunner implements CommandLineRunner {
                 .title("Zabójcze Wesele")
                 .genre("Komedia")
                 .description("Zabójcze wesele opis")
+                .playingRoom(7L)
                 .playDates(List.of(LocalDate.of(2024, 7, 3)))
                 .build();
 
@@ -74,6 +77,7 @@ public class AppRunner implements CommandLineRunner {
                 .title("Geostorm")
                 .genre("Akcja")
                 .description("Geostorm opis")
+                .playingRoom(7L)
                 .playDates(List.of(LocalDate.of(2024, 7, 4)))
                 .build();
 
@@ -81,6 +85,7 @@ public class AppRunner implements CommandLineRunner {
                 .title("Szybcy i Wścielki")
                 .genre("Akcja")
                 .description("Szybcy i Wścielki opis")
+                .playingRoom(3L)
                 .playDates(List.of(LocalDate.of(2024, 7, 5)))
                 .build();
 
@@ -90,25 +95,25 @@ public class AppRunner implements CommandLineRunner {
         movieRepository.save(m4);
         movieRepository.save(m5);
 
-        Reservation r1 = Reservation.builder()
-                .customerEmail("smyku1232@wp.pl")
-                .movie(m1)
-                .selectedPlayTime(LocalDateTime.of(LocalDate.of(2024, 8, 1), HOUR_18.getPlayTime()))
-                .roomNumber(3L)
-                .seats(List.of(Reservation.Seat.builder().row(1).placeNumber(10).build())).build();
-
-        Reservation r2 = Reservation.builder()
-                .customerEmail("smyku1232@wp.pl")
-                .movie(m2)
-                .selectedPlayTime(LocalDateTime.of(LocalDate.of(2024, 9, 10), HOUR_12.getPlayTime()))
-                .roomNumber(7L)
-                .seats(List.of(Reservation.Seat.builder().row(3).placeNumber(2).build(), Reservation.Seat.builder().row(3).placeNumber(3).build()))
-                .build();
-
-        reservationRepository.save(r1);
-        reservationRepository.save(r2);
-
-        System.out.println(ReservationMapper.INSTANCE.reservationToReservationDto(r2));
+//        Reservation r1 = Reservation.builder()
+//                .customerEmail("smyku1232@wp.pl")
+//                .movie(m1)
+//                .selectedPlayTime(LocalDateTime.of(LocalDate.of(2024, 8, 1), HOUR_18.getPlayTime()))
+//                .roomNumber(3L)
+//                .seats(List.of(Reservation.Seat.builder().row(1).placeNumber(10).build())).build();
+//
+//        Reservation r2 = Reservation.builder()
+//                .customerEmail("smyku1232@wp.pl")
+//                .movie(m2)
+//                .selectedPlayTime(LocalDateTime.of(LocalDate.of(2024, 9, 10), HOUR_12.getPlayTime()))
+//                .roomNumber(7L)
+//                .seats(List.of(Reservation.Seat.builder().row(3).placeNumber(2).build(), Reservation.Seat.builder().row(3).placeNumber(3).build()))
+//                .build();
+//
+//        reservationRepository.save(r1);
+//        reservationRepository.save(r2);
+//
+//        System.out.println(ReservationMapper.INSTANCE.reservationToReservationDto(r2));
 //
 //        System.out.println(MovieMapper.INSTANCE.movieToMovieDto(m1));
 //

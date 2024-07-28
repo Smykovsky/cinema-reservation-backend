@@ -31,7 +31,9 @@ public class MovieManagementService {
                 .title(movieDto.getTitle())
                 .genre(movieDto.getGenre())
                 .description(movieDto.getDescription())
+                .playingRoom(movieDto.getPlayingRoom())
                 .playDates(movieDto.getPlayDates())
+                .playTimes(movieDto.getPlayTimes())
                 .build();
 
         saveMovie(movie);
@@ -46,6 +48,7 @@ public class MovieManagementService {
         Optional.ofNullable(movieDto.getTitle()).filter(title -> !title.isEmpty()).ifPresent(movie::setTitle);
         Optional.ofNullable(movieDto.getGenre()).filter(genre -> !genre.isEmpty()).ifPresent(movie::setGenre);
         Optional.ofNullable(movieDto.getDescription()).filter(description -> !description.isEmpty()).ifPresent(movie::setDescription);
+        Optional.ofNullable(movieDto.getPlayingRoom()).filter(playingRoom -> playingRoom != null && playingRoom != 0L).ifPresent(movie::setPlayingRoom);
         Optional.ofNullable(movieDto.getPlayDates()).filter(dates -> !dates.isEmpty()).ifPresent(movie::setPlayDates);
         Optional.ofNullable(movieDto.getPlayTimes()).filter(times -> !times.isEmpty()).ifPresent(movie::setPlayTimes);
 

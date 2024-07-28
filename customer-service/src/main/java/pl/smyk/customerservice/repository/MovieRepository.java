@@ -12,4 +12,5 @@ public interface MovieRepository extends MongoRepository<Movie, String> {
     List<Movie> findByPlayDatesBetween(LocalDate start, LocalDate end);
 
     List<Movie> findByGenre(String genre);
+    List<Movie> findAllByTitleContainingIgnoreCase(String title);
 }
