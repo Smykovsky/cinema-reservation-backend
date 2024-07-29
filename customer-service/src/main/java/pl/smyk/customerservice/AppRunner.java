@@ -11,11 +11,13 @@ import pl.smyk.customerservice.dto.request.ReservationRequest;
 import pl.smyk.customerservice.dto.response.ReservationResponse;
 import pl.smyk.customerservice.mapper.MovieMapper;
 import pl.smyk.customerservice.mapper.ReservationMapper;
+import pl.smyk.customerservice.model.Genre;
 import pl.smyk.customerservice.model.Movie;
 import pl.smyk.customerservice.model.PlayTime;
 import pl.smyk.customerservice.model.Reservation;
 import pl.smyk.customerservice.repository.MovieRepository;
 import pl.smyk.customerservice.repository.ReservationRepository;
+import pl.smyk.customerservice.service.MailService;
 import pl.smyk.customerservice.service.MovieManagementService;
 import pl.smyk.customerservice.service.MovieService;
 import pl.smyk.customerservice.service.ReservationService;
@@ -42,58 +44,60 @@ public class AppRunner implements CommandLineRunner {
     private MovieManagementService movieManagementService;
     @Autowired
     private MovieRepository movieRepository;
+    @Autowired
+    private MailService mailService;
     @Override
     public void run(String... args) throws Exception {
-        template.dropCollection(Reservation.class);
-        template.createCollection(Reservation.class);
-        template.dropCollection(Movie.class);
-        template.createCollection(Movie.class);
-
-        Movie m1 = Movie.builder()
-          .title("Bez litości")
-          .genre("Akcja")
-          .description("Bez litości opis")
-          .playingRoom(4L)
-          .playDates(List.of(LocalDate.of(2024, 7, 1)))
-          .build();
-
-        Movie m2 = Movie.builder()
-          .title("Bez litości2")
-          .genre("Akcja")
-          .description("Bez litości2 opis")
-          .playingRoom(7L)
-          .playDates(List.of(LocalDate.of(2024, 7, 2)))
-          .build();
-
-        Movie m3 = Movie.builder()
-                .title("Zabójcze Wesele")
-                .genre("Komedia")
-                .description("Zabójcze wesele opis")
-                .playingRoom(7L)
-                .playDates(List.of(LocalDate.of(2024, 7, 3)))
-                .build();
-
-        Movie m4 = Movie.builder()
-                .title("Geostorm")
-                .genre("Akcja")
-                .description("Geostorm opis")
-                .playingRoom(7L)
-                .playDates(List.of(LocalDate.of(2024, 7, 4)))
-                .build();
-
-        Movie m5 = Movie.builder()
-                .title("Szybcy i Wścielki")
-                .genre("Akcja")
-                .description("Szybcy i Wścielki opis")
-                .playingRoom(3L)
-                .playDates(List.of(LocalDate.of(2024, 7, 5)))
-                .build();
-
-        movieRepository.save(m1);
-        movieRepository.save(m2);
-        movieRepository.save(m3);
-        movieRepository.save(m4);
-        movieRepository.save(m5);
+//        template.dropCollection(Reservation.class);
+//        template.createCollection(Reservation.class);
+//        template.dropCollection(Movie.class);
+//        template.createCollection(Movie.class);
+//
+//        Movie m1 = Movie.builder()
+//          .title("Bez litości")
+//          .genres(List.of(Genre.ACTION, Genre.DRAMA))
+//          .description("Bez litości opis")
+//          .playingRoom(4L)
+//          .playDates(List.of(LocalDate.of(2024, 7, 1)))
+//          .build();
+//
+//        Movie m2 = Movie.builder()
+//          .title("Bez litości2")
+//          .genres(List.of(Genre.ACTION, Genre.DRAMA))
+//          .description("Bez litości2 opis")
+//          .playingRoom(7L)
+//          .playDates(List.of(LocalDate.of(2024, 7, 2)))
+//          .build();
+//
+//        Movie m3 = Movie.builder()
+//                .title("Zabójcze Wesele")
+//                .genres(List.of(Genre.COMEDY))
+//                .description("Zabójcze wesele opis")
+//                .playingRoom(7L)
+//                .playDates(List.of(LocalDate.of(2024, 7, 3)))
+//                .build();
+//
+//        Movie m4 = Movie.builder()
+//                .title("Geostorm")
+//                .genres(List.of(Genre.THRILLER))
+//                .description("Geostorm opis")
+//                .playingRoom(7L)
+//                .playDates(List.of(LocalDate.of(2024, 7, 4)))
+//                .build();
+//
+//        Movie m5 = Movie.builder()
+//                .title("Szybcy i Wścielki")
+//                .genres(List.of(Genre.ACTION, Genre.ADVENTURE))
+//                .description("Szybcy i Wścielki opis")
+//                .playingRoom(3L)
+//                .playDates(List.of(LocalDate.of(2024, 7, 30)))
+//                .build();
+//
+//        movieRepository.save(m1);
+//        movieRepository.save(m2);
+//        movieRepository.save(m3);
+//        movieRepository.save(m4);
+//        movieRepository.save(m5);
 
 //        Reservation r1 = Reservation.builder()
 //                .customerEmail("smyku1232@wp.pl")
@@ -112,7 +116,11 @@ public class AppRunner implements CommandLineRunner {
 //
 //        reservationRepository.save(r1);
 //        reservationRepository.save(r2);
-//
+
+        Reservation byId = reservationService.findById("66a75e0e1dfc9a50f4078011");
+        mailService.sendEmail("kamil.smyk00@gmail.com", byId);
+
+
 //        System.out.println(ReservationMapper.INSTANCE.reservationToReservationDto(r2));
 //
 //        System.out.println(MovieMapper.INSTANCE.movieToMovieDto(m1));

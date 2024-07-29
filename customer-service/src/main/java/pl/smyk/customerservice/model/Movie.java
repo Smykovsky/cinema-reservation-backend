@@ -19,17 +19,17 @@ public class Movie {
   @MongoId
   private String id;
   private String title;
-  private String genre;
+  private List<Genre> genres;
   private String description;
   private Long playingRoom;
   private List<LocalDate> playDates;
   private List<PlayTime> playTimes;
 
   @Builder
-  public Movie(String id, String title, String genre, String description, Long playingRoom, List<LocalDate> playDates, List<PlayTime> playTimes) {
+  public Movie(String id, String title, List<Genre> genres, String description, Long playingRoom, List<LocalDate> playDates, List<PlayTime> playTimes) {
     this.id = id;
     this.title = title;
-    this.genre = genre;
+    this.genres = genres;
     this.description = description;
     this.playingRoom = playingRoom;
     this.playDates = playDates;
@@ -42,5 +42,13 @@ public class Movie {
 
   public void removePlayTime(PlayTime playTime) {
     this.playTimes.remove(playTime);
+  }
+
+  public void addGenre(Genre genre) {
+    this.genres.add(genre);
+  }
+
+  public void removeGenre(Genre genre) {
+    this.genres.remove(genre);
   }
 }
