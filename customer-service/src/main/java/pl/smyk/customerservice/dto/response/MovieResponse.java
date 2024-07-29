@@ -6,8 +6,7 @@ import lombok.*;
 @Getter
 @Setter
 @Builder
-public class ReservationResponse {
-    private String reservationId;
-    private String customerEmail;
+public class MovieResponse {
+    private int status;
     private String message;
 }

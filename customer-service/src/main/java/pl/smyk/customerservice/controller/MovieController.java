@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pl.smyk.customerservice.dto.MovieDto;
 import pl.smyk.customerservice.dto.request.MovieDateRangeDto;
-import pl.smyk.customerservice.model.Movie;
+import pl.smyk.customerservice.model.Genre;
 import pl.smyk.customerservice.service.MovieService;
 
 import java.util.List;
@@ -41,9 +41,8 @@ public class MovieController {
   }
 
   @GetMapping("/search/genre")
-  public ResponseEntity<?> getMoviesByGenre(@RequestBody String genre) {
-    List<MovieDto> movieList = movieService.getMoviesByGenre(genre);
+  public ResponseEntity<?> getMoviesByGenre(@RequestBody List<Genre> genres) {
+    List<MovieDto> movieList = movieService.getMoviesByGenre(genres);
     return ResponseEntity.ok(movieList);
   }
-
 }

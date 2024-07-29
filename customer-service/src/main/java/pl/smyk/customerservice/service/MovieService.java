@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pl.smyk.customerservice.dto.MovieDto;
 import pl.smyk.customerservice.mapper.MovieMapper;
+import pl.smyk.customerservice.model.Genre;
 import pl.smyk.customerservice.model.Movie;
 import pl.smyk.customerservice.repository.MovieRepository;
 
@@ -38,8 +39,8 @@ public class MovieService {
         return movies.stream().map(MovieMapper.INSTANCE::movieToMovieDto).toList();
     }
 
-    public List<MovieDto> getMoviesByGenre(String genre) {
-        List<Movie> movies = movieRepository.findByGenre(genre);
+    public List<MovieDto> getMoviesByGenre(List<Genre> genres) {
+        List<Movie> movies = movieRepository.findByGenres(genres);
         return movies.stream().map(MovieMapper.INSTANCE::movieToMovieDto).toList();
     }
 

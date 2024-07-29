@@ -15,3 +15,7 @@ spring:
     name: payment-service
   config:
     import: optional:configserver:http://localhost:8888
+
+
+STRIPE_SECRET_KEY: sk_test_51NfnCAKFJTkwIyHA0FFLb02Kl7C3Q8rRq3Y621ateqprGP2DgIZbZ1awrcmpF8Ktphg2qUE09HF5YQFGSIOtE4sI00jVdUnjvJ
+STRIPE_PUBLIC_KEY: pk_test_51NfnCAKFJTkwIyHABbg9OkB3hy7PLzk0QHSpkxUDsZXL1g9GXhkvpnXHm5iNyFroCaufYuJLYvNZyt9kClli4czc00UNKT8rK4

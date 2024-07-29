@@ -32,7 +32,7 @@ public class ReservationService {
     }
 
     public Reservation findById(String id) {
-        return reservationRepository.findById(id).orElseThrow();
+        return reservationRepository.findById(id).orElse(null);
     }
 
     public ReservationDto getReservationById(String id) {
@@ -106,8 +106,6 @@ public class ReservationService {
                     .message("Selected seats are currently occupied!")
                     .build();
         }
-
-
 
         Reservation newReservation = Reservation.builder()
                 .customerEmail(reservationRequest.getCustomerEmail())

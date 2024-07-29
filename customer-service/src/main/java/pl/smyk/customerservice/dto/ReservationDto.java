@@ -4,8 +4,6 @@ import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import pl.smyk.customerservice.model.Movie;
-import pl.smyk.customerservice.model.Reservation;
 
 import java.time.LocalDateTime;
 import java.util.List;
