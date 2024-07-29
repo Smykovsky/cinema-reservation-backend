@@ -3,13 +3,11 @@ package pl.smyk.customerservice.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pl.smyk.customerservice.dto.MovieDto;
-import pl.smyk.customerservice.dto.response.ReservationResponse;
 import pl.smyk.customerservice.mapper.MovieMapper;
 import pl.smyk.customerservice.model.Movie;
 import pl.smyk.customerservice.repository.MovieRepository;
 
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
