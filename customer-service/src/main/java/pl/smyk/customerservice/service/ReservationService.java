@@ -121,7 +121,7 @@ public class ReservationService {
         return ReservationResponse.builder()
                 .reservationId(newReservation.getId())
                 .customerEmail(reservationRequest.getCustomerEmail())
-                .message("Succesfully created reservation!")
+                .message("Successfully created reservation!")
                 .build();
     }
 }

@@ -15,9 +15,17 @@ public class RouteValidator {
     "/eureka"
   );
 
+  public static final List<String> operatorRoleEndpoints = List.of(
+          "/api/movie/management"
+  );
+
   public Predicate<ServerHttpRequest> isSecured =
     request -> openApiEndpoints
       .stream()
       .noneMatch(uri -> request.getURI().getPath().contains(uri));
 
+  public Predicate<ServerHttpRequest> requiresOperatorRole =
+          request -> operatorRoleEndpoints
+                  .stream()
+                  .anyMatch(uri -> request.getURI().getPath().startsWith(uri));
 }

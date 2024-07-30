@@ -6,6 +6,7 @@ import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFac
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -34,25 +35,32 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
   @Override
   public GatewayFilter apply(Config config) {
     return (exchange, chain) -> {
-      if (validator.isSecured.test(exchange.getRequest())) {
-        if (!exchange.getRequest().getHeaders().containsKey(AUTHORIZATION)) {
+      ServerHttpRequest request = exchange.getRequest();
+
+      if (validator.isSecured.test(request)) {
+        if (!request.getHeaders().containsKey(AUTHORIZATION)) {
           logger.warning("Missing authorization header");
           return handleUnauthorized(exchange, "Missing authorization header");
         }
 
-        String authHeader = exchange.getRequest().getHeaders().getFirst(AUTHORIZATION);
-        if (authHeader != null) {
-          if (authHeader.startsWith("Bearer ")) {
-            authHeader = authHeader.substring(7);
-          }
+        String authHeader = request.getHeaders().getFirst(AUTHORIZATION);
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+          authHeader = authHeader.substring(7);
         } else {
-          logger.warning("Authorization header does not start with Bearer");
+          logger.warning("Invalid authorization header");
           return handleUnauthorized(exchange, "Invalid authorization header");
         }
 
         try {
           jwtUtil.validateToken(authHeader);
           logger.info("Token validated successfully");
+
+          if (validator.requiresOperatorRole.test(request)) {
+            if (!jwtUtil.hasRole(authHeader, "OPERATOR")) {
+              logger.warning("Operator role required");
+              return handleUnauthorized(exchange, "Operator role required");
+            }
+          }
         } catch (Exception e) {
           logger.severe("Invalid or expired token: " + e.getMessage());
           return handleUnauthorized(exchange, "Invalid or expired token");

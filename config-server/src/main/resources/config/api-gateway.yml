@@ -39,7 +39,3 @@ eureka:
         initialInterval: 1000
         multiplier: 1.2
         maxInterval: 2000
-
-logging:
-  level:
-    org.springframework.cloud.gateway: DEBUG

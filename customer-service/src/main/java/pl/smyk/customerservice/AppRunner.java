@@ -117,8 +117,8 @@ public class AppRunner implements CommandLineRunner {
 //        reservationRepository.save(r1);
 //        reservationRepository.save(r2);
 
-        Reservation byId = reservationService.findById("66a75e0e1dfc9a50f4078011");
-        mailService.sendEmail("kamil.smyk00@gmail.com", byId);
+//        Reservation byId = reservationService.findById("66a75e0e1dfc9a50f4078011");
+//        mailService.sendEmail("kamil.smyk00@gmail.com", byId);
 
 
 //        System.out.println(ReservationMapper.INSTANCE.reservationToReservationDto(r2));
