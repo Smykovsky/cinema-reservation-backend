@@ -11,10 +11,7 @@ import pl.smyk.customerservice.dto.request.ReservationRequest;
 import pl.smyk.customerservice.dto.response.ReservationResponse;
 import pl.smyk.customerservice.mapper.MovieMapper;
 import pl.smyk.customerservice.mapper.ReservationMapper;
-import pl.smyk.customerservice.model.Genre;
-import pl.smyk.customerservice.model.Movie;
-import pl.smyk.customerservice.model.PlayTime;
-import pl.smyk.customerservice.model.Reservation;
+import pl.smyk.customerservice.model.*;
 import pl.smyk.customerservice.repository.MovieRepository;
 import pl.smyk.customerservice.repository.ReservationRepository;
 import pl.smyk.customerservice.service.MailService;
@@ -106,6 +103,7 @@ public class AppRunner implements CommandLineRunner {
                 .roomNumber(3L)
                 .seats(List.of(Reservation.Seat.builder().row(1).placeNumber(10).build()))
                 .totalPrice(40.0)
+                .paymentStatus(PaymentStatus.WAITING)
                 .build();
 
         Reservation r2 = Reservation.builder()
@@ -115,6 +113,7 @@ public class AppRunner implements CommandLineRunner {
                 .roomNumber(7L)
                 .seats(List.of(Reservation.Seat.builder().row(3).placeNumber(2).build(), Reservation.Seat.builder().row(3).placeNumber(3).build()))
                 .totalPrice(80.0)
+                .paymentStatus(PaymentStatus.WAITING)
                 .build();
 
         reservationRepository.save(r1);

@@ -15,6 +15,7 @@ import pl.smyk.paymentservice.mapper.ResponseEntityMapper;
 import pl.smyk.paymentservice.service.PaymentService;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -80,5 +81,17 @@ public class PaymentController {
         } else if (paymentResponse.equals("failed")) {
             return PaymentResponse.builder().paymentId(request.getPaymentId()).message("Payment process failed!").build();
         } else return PaymentResponse.builder().paymentId(request.getPaymentId()).message("Unknow payment process error!").build();
+    }
+
+    @GetMapping("/payments")
+    public ResponseEntity<?> getPaymentList(@RequestHeader("Authorization") String authorizationHeader) throws StripeException {
+        ResponseEntity<?> customerResponse = authServiceClient.getCustomer(authorizationHeader);
+        HashMap<String, Object> customerDto = responseMapper.convertResponseToMap(customerResponse);
+        if (customerDto == null)  {
+          return ResponseEntity.status(404).body("Customer not found!");
+        }
+
+        List<PaymentIntent> userPaymentsByEmail = paymentService.getUserPaymentsByEmail(customerDto.get("email").toString());
+        return ResponseEntity.ok(userPaymentsByEmail);
     }
 }

@@ -3,21 +3,24 @@ package pl.smyk.paymentservice.service;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Coupon;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.PaymentIntentCollection;
 import com.stripe.param.PaymentIntentConfirmParams;
 import com.stripe.param.PaymentIntentConfirmParams.PaymentMethodOptions.Blik;
+import com.stripe.param.PaymentIntentListParams;
 import org.springframework.stereotype.Service;
 import pl.smyk.paymentservice.dto.response.PaymentResponse;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static com.stripe.param.PaymentIntentConfirmParams.PaymentMethodData.Type.BLIK;
 
 @Service
 public class PaymentService {
+  private int RETRY_COUNT = 0;
+  private final int MAX_RETRY_COUNT = 12;
+  private final int DELAY_MILLIS = 2000;
+
     public PaymentIntent findPaymentIntentById(String id) throws StripeException {
         PaymentIntent retrieve = PaymentIntent.retrieve(id);
         if (retrieve == null) {
@@ -69,29 +72,34 @@ public class PaymentService {
         }
     }
 
-    private String pollPaymentStatus(String paymentId) {
-        try {
-            PaymentIntent paymentIntent = findPaymentIntentById(paymentId);
+  private String pollPaymentStatus(String paymentId) {
+    try {
+      PaymentIntent paymentIntent;
+      String status;
 
-            String status = paymentIntent.getStatus();
-            return switch (status) {
-                case "succeeded" ->
-                        "success";
-                case "requires_action" ->
-                        "in_process";
-                case "payment_failed" ->
-                        "failed";
-                default -> "undefined_error";
-            };
-        } catch (StripeException e) {
-            throw new RuntimeException(e);
+      do {
+        paymentIntent = findPaymentIntentById(paymentId);
+        status = paymentIntent.getStatus();
+
+        if ("succeeded".equals(status)) {
+          return "success";
+        } else if ("payment_failed".equals(status)) {
+          return "failed";
         }
-    }
 
-    public boolean verifyPayment(String paymentId) throws StripeException {
-        PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentId);
-        return "succeeded".equals(paymentIntent.getStatus());
+        RETRY_COUNT++;
+        if (RETRY_COUNT >= MAX_RETRY_COUNT) {
+          return "undefined_error";
+        }
+
+        Thread.sleep(DELAY_MILLIS);
+      } while (!"succeeded".equals(status) && !"payment_failed".equals(status));
+
+      return "undefined_error";
+    } catch (StripeException | InterruptedException e) {
+      throw new RuntimeException(e);
     }
+  }
 
     public Coupon createGiftCard(Double amount, String customerEmail) throws StripeException {
         Map<String, Object> params = new HashMap<>();
@@ -105,4 +113,29 @@ public class PaymentService {
         System.out.println(coupon);
         return coupon;
     }
+
+  public List<PaymentIntent> getUserPaymentsByEmail(String email) throws StripeException {
+    List<PaymentIntent> userPayments = new ArrayList<>();
+    String startingAfter = null;
+
+    do {
+      PaymentIntentListParams params = PaymentIntentListParams.builder()
+        .setLimit(100L)
+        .setStartingAfter(startingAfter)
+        .build();
+
+      PaymentIntentCollection paymentIntents = PaymentIntent.list(params);
+
+      for (PaymentIntent paymentIntent : paymentIntents.getData()) {
+        String metadataEmail = paymentIntent.getMetadata().get("customer_email");
+        if (metadataEmail != null && metadataEmail.trim().equalsIgnoreCase(email.trim())) {
+          userPayments.add(paymentIntent);
+        }
+      }
+
+      startingAfter = paymentIntents.getData().isEmpty() ? null : paymentIntents.getData().get(paymentIntents.getData().size() - 1).getId();
+    } while (startingAfter != null);
+
+    return userPayments;
+  }
 }
