@@ -10,6 +10,7 @@ import pl.smyk.customerservice.feignClient.AuthServiceClient;
 import pl.smyk.customerservice.mapper.MovieMapper;
 import pl.smyk.customerservice.mapper.ReservationMapper;
 import pl.smyk.customerservice.model.Movie;
+import pl.smyk.customerservice.model.PaymentStatus;
 import pl.smyk.customerservice.model.Reservation;
 import pl.smyk.customerservice.repository.ReservationRepository;
 
@@ -114,6 +115,7 @@ public class ReservationService {
                 .selectedPlayTime(selectedLocalDatetime)
                 .seats(Reservation.Seat.seatDtoToSeat(reservationRequest.getSeats()))
                 .totalPrice(reservationRequest.getSeats().size() * SEAT_PRICE)
+                .paymentStatus(PaymentStatus.WAITING)
                 .build();
 
         saveReservation(newReservation);
@@ -123,5 +125,12 @@ public class ReservationService {
                 .customerEmail(reservationRequest.getCustomerEmail())
                 .message("Successfully created reservation!")
                 .build();
+    }
+
+    public void changePaymentStatusAsPaid(String reservationId) {
+        Reservation reservation = findById(reservationId);
+
+        reservation.setPaymentStatus(PaymentStatus.PAID);
+        reservationRepository.save(reservation);
     }
 }

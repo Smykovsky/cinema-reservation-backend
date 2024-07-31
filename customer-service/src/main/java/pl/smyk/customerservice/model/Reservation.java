@@ -27,6 +27,7 @@ public class Reservation {
     private LocalDateTime selectedPlayTime;
     private List<Seat> seats;
     private Double totalPrice;
+    private PaymentStatus paymentStatus;
 
     @AllArgsConstructor
     @Getter

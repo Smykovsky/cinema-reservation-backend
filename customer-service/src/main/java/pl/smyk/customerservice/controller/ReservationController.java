@@ -55,4 +55,14 @@ public class ReservationController {
 
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/{id}/update-paymentStatus-paid")
+    public void updatePaymentStatusAsPaid(@RequestHeader("Authorization") String  authorizationHeader, @PathVariable String id) {
+        CustomerDto customer = authServiceClient.getCustomer(authorizationHeader);
+        if (customer == null) {
+            return;
+        }
+
+        reservationService.changePaymentStatusAsPaid(id);
+    }
 }

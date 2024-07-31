@@ -6,9 +6,11 @@ import com.stripe.model.PaymentIntent;
 import com.stripe.param.PaymentIntentConfirmParams;
 import com.stripe.param.PaymentIntentConfirmParams.PaymentMethodOptions.Blik;
 import org.springframework.stereotype.Service;
+import pl.smyk.paymentservice.dto.response.PaymentResponse;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -16,6 +18,15 @@ import static com.stripe.param.PaymentIntentConfirmParams.PaymentMethodData.Type
 
 @Service
 public class PaymentService {
+    public PaymentIntent findPaymentIntentById(String id) throws StripeException {
+        PaymentIntent retrieve = PaymentIntent.retrieve(id);
+        if (retrieve == null) {
+            return null;
+        }
+        return retrieve;
+
+    }
+
     public PaymentIntent createPaymentIntent(String customerEmail, String reservationId, Double amount) throws StripeException {
         Map<String, Object> params = new HashMap<>();
         params.put("amount", (int) (amount * 100));
@@ -34,7 +45,7 @@ public class PaymentService {
 
     public String confirmBlikPayment(String paymentId, String code) {
         try {
-            PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentId);
+            PaymentIntent paymentIntent = findPaymentIntentById(paymentId);
 
             PaymentIntentConfirmParams confirmParams = PaymentIntentConfirmParams.builder()
                     .setPaymentMethodData(PaymentIntentConfirmParams.PaymentMethodData.builder().setType(BLIK).build())
@@ -60,23 +71,18 @@ public class PaymentService {
 
     private String pollPaymentStatus(String paymentId) {
         try {
-            PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentId);
+            PaymentIntent paymentIntent = findPaymentIntentById(paymentId);
 
             String status = paymentIntent.getStatus();
-            switch (status) {
-                case "succeeded":
-                    return "Płatność zakończona sukcesem!";
-                case "requires_action":
-                    return "Proszę dokończyć płatność. W przypadku Blik, upewnij się, że użytkownik zakończył operację w aplikacji mobilnej lub banku.";
-                case "requires_confirmation":
-                    return "Płatność wymaga dodatkowej potwierdzenia.";
-                case "requires_payment_method":
-                    return "Wymagany jest inny sposób płatności.";
-                case "payment_failed":
-                    return "Płatność zakończona niepowodzeniem!";
-                default:
-                    return "Nieznany status płatności.";
-            }
+            return switch (status) {
+                case "succeeded" ->
+                        "success";
+                case "requires_action" ->
+                        "in_process";
+                case "payment_failed" ->
+                        "failed";
+                default -> "undefined_error";
+            };
         } catch (StripeException e) {
             throw new RuntimeException(e);
         }
