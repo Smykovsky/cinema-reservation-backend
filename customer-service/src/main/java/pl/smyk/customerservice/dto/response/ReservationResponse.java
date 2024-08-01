@@ -9,5 +9,6 @@ import lombok.*;
 public class ReservationResponse {
     private String reservationId;
     private String customerEmail;
+    private String errorReason;
     private String message;
 }

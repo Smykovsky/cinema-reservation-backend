@@ -97,14 +97,15 @@ public class ReservationService {
         if (!movie.getPlayDates().contains(reservationRequest.getSelectedDate()) || !movie.getPlayTimes().contains(reservationRequest.getSelectedTime())) {
           return ReservationResponse.builder()
             .message("We are not screening this movie at this date time!")
+            .errorReason("NOT_SCREENING_AT_DATE")
             .build();
         }
 
         boolean isOccupied = isSeatsOccupied(movie.getPlayingRoom(), selectedLocalDatetime, reservationRequest.getSeats());
-        System.out.println(isOccupied);
         if (isOccupied) {
             return ReservationResponse.builder()
                     .message("Selected seats are currently occupied!")
+                    .errorReason("SEAT_OCCUPIED")
                     .build();
         }
 
@@ -124,6 +125,7 @@ public class ReservationService {
                 .reservationId(newReservation.getId())
                 .customerEmail(reservationRequest.getCustomerEmail())
                 .message("Successfully created reservation!")
+                .errorReason(null)
                 .build();
     }
 

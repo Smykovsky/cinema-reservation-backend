@@ -57,6 +57,9 @@ public class PaymentService {
                             .build())
                     .build();
 
+            if (!code.equals("123456")) {
+                return "blik_code_error";
+            }
             paymentIntent.confirm(confirmParams);
 
             try {
@@ -81,9 +84,11 @@ public class PaymentService {
         paymentIntent = findPaymentIntentById(paymentId);
         status = paymentIntent.getStatus();
 
-        if ("succeeded".equals(status)) {
+        if (status.equals("succeeded")) {
           return "success";
-        } else if ("payment_failed".equals(status)) {
+        } else if (status.equals("in_process")){
+        return "in_process";
+        } else if (status.equals("payment_failed")) {
           return "failed";
         }
 
@@ -93,7 +98,7 @@ public class PaymentService {
         }
 
         Thread.sleep(DELAY_MILLIS);
-      } while (!"succeeded".equals(status) && !"payment_failed".equals(status));
+      } while (!"succeeded".equals(status) || !"payment_failed".equals(status));
 
       return "undefined_error";
     } catch (StripeException | InterruptedException e) {

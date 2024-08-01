@@ -30,11 +30,11 @@ public class PaymentController {
 
 
     @PostMapping("/create-payment/{reservationId}")
-    public ResponseEntity<?> createPaymentIntent(@RequestHeader("Authorization") String authorizationHeader, @PathVariable String reservationId) {
+    public PaymentResponse createPaymentIntent(@RequestHeader("Authorization") String authorizationHeader, @PathVariable String reservationId) {
         ResponseEntity<?> customerResponse = authServiceClient.getCustomer(authorizationHeader);
         HashMap<String, Object> customerDto = responseMapper.convertResponseToMap(customerResponse);
         if (customerDto == null) {
-            return ResponseEntity.status(404).body("Customer not found!");
+            return PaymentResponse.builder().message("Customer not found!").build();
         }
 
         ResponseEntity<?> reservationResponse = reservationServiceClient.getLoggedUserReservationById(authorizationHeader, reservationId);
@@ -42,7 +42,7 @@ public class PaymentController {
         HashMap<String, Object> reservationDto = responseMapper.convertResponseToMap(reservationResponse);
 
         if (reservationDto == null) {
-            return ResponseEntity.status(404).body("Reservation not found!");
+            return PaymentResponse.builder().message("Reservation not found!").build();
         }
 
         String customerEmail = String.valueOf(reservationDto.get("customerEmail"));
@@ -56,7 +56,7 @@ public class PaymentController {
             throw new RuntimeException(e);
         }
 
-        return ResponseEntity.ok(paymentIntent.getId());
+        return PaymentResponse.builder().paymentId(paymentIntent.getId()).metaData(paymentIntent.getMetadata()).message("Pomyślnie stworzono płatność dla rezerwacji o id: " + paymentIntent.getId()).build();
 
     }
 
@@ -75,15 +75,23 @@ public class PaymentController {
 
         if (paymentResponse.equals("success")){
             reservationServiceClient.updatePaymentStatusAsPaid(authorizationHeader, reservationIdFromPayment);
-            return PaymentResponse.builder().paymentId(request.getPaymentId()).message("Successfuly paid for reservation!").build();
+
+            //handle email sending with reservation ticket
+
+            return PaymentResponse.builder().paymentId(request.getPaymentId()).message("Successfully paid for reservation!").build();
         } else if (paymentResponse.equals("in_process")) {
             return PaymentResponse.builder().paymentId(request.getPaymentId()).message("Payment is in process!").build();
         } else if (paymentResponse.equals("failed")) {
             return PaymentResponse.builder().paymentId(request.getPaymentId()).message("Payment process failed!").build();
-        } else return PaymentResponse.builder().paymentId(request.getPaymentId()).message("Unknow payment process error!").build();
+        } else if (paymentResponse.equals("blik_code_error")){
+            return PaymentResponse.builder().paymentId(request.getPaymentId()).message("Blik code provided is not correct!").build();
+        } else {
+            if (paymentIntentById.getStatus().equals("succeeded")) return PaymentResponse.builder().paymentId(request.getPaymentId()).message("Reservation has been paid!").build();
+            else return PaymentResponse.builder().paymentId(request.getPaymentId()).message("Unknow payment process error!").build();
+        }
     }
 
-    @GetMapping("/payments")
+    @GetMapping("/user-payments")
     public ResponseEntity<?> getPaymentList(@RequestHeader("Authorization") String authorizationHeader) throws StripeException {
         ResponseEntity<?> customerResponse = authServiceClient.getCustomer(authorizationHeader);
         HashMap<String, Object> customerDto = responseMapper.convertResponseToMap(customerResponse);
