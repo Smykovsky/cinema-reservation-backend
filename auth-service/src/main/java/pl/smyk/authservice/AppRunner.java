@@ -24,7 +24,7 @@ public class AppRunner implements CommandLineRunner {
     public void run(String... args) throws Exception {
         template.dropCollection(Customer.class);
         template.createCollection(Customer.class);
-        Customer c = Customer.builder()
+        Customer c1 = Customer.builder()
           .firstName("Kamil")
           .lastName("Smyk")
           .email("smyku1232@wp.pl")
@@ -32,7 +32,16 @@ public class AppRunner implements CommandLineRunner {
           .roles(List.of(Role.CUSTOMER))
           .build();
 
-        template.insert(c);
+        Customer c2 = Customer.builder()
+                .firstName("Kamill")
+                .lastName("Smykk")
+                .email("kamil.smyk00@gmail.com")
+                .password(passwordEncoder.encode("test"))
+                .roles(List.of(Role.CUSTOMER))
+                .build();
+
+        template.insert(c1);
+        template.insert(c2);
 
 
     }

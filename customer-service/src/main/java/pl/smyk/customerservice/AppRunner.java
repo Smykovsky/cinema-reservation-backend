@@ -97,7 +97,7 @@ public class AppRunner implements CommandLineRunner {
         movieRepository.save(m5);
 
         Reservation r1 = Reservation.builder()
-                .customerEmail("smyku1232@wp.pl")
+                .customerEmail("kamil.smyk00@gmail.com")
                 .movie(m1)
                 .selectedPlayTime(LocalDateTime.of(LocalDate.of(2024, 8, 1), HOUR_18.getPlayTime()))
                 .roomNumber(3L)

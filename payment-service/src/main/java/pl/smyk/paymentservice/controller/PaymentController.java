@@ -76,8 +76,6 @@ public class PaymentController {
         if (paymentResponse.equals("success")){
             reservationServiceClient.updatePaymentStatusAsPaid(authorizationHeader, reservationIdFromPayment);
 
-            //handle email sending with reservation ticket
-
             return PaymentResponse.builder().paymentId(request.getPaymentId()).message("Successfully paid for reservation!").build();
         } else if (paymentResponse.equals("in_process")) {
             return PaymentResponse.builder().paymentId(request.getPaymentId()).message("Payment is in process!").build();

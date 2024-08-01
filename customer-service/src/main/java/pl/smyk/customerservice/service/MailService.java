@@ -16,12 +16,25 @@ public class MailService {
     @Value("${spring.mail.username}")
     private String email;
 
-    public void sendEmail(String to, Reservation reservation ) {
+    public void sendEmailForReservationRemind(String to, Reservation reservation ) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(to);
         message.setSubject("Przypomnienie o rezerwacji: " + reservation.getId());
         message.setText("Szanowni Państwo,\n\n" +
                 "Chcielibyśmy przypomnieć o rezerwacji na film, który odbędzie się jutro o godzinie " +
+                reservation.getSelectedPlayTime().getHour() + ":" +
+                String.format("%02d", reservation.getSelectedPlayTime().getMinute()) + ".");
+        message.setFrom(email);
+
+        javaMailSender.send(message);
+    }
+
+    public void sendEmailWithReservationTicket(String to, Reservation reservation ) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setSubject("Rezerwacja : " + reservation.getId());
+        message.setText("Szanowni Państwo,\n\n" +
+                "Przesyłamy bilet do rezerwacji: " + reservation.getId() + " na film, który odbędzie się: " +
                 reservation.getSelectedPlayTime().getHour() + ":" +
                 String.format("%02d", reservation.getSelectedPlayTime().getMinute()) + ".");
         message.setFrom(email);

@@ -17,6 +17,7 @@ public class RemindScheduler {
     @Autowired
     private MailService mailService;
 
+    //every day at 9AM
     @Scheduled(cron = "0 0 9 * * ?")
     public void sendReminders() {
         LocalDateTime now = LocalDateTime.now();
@@ -27,7 +28,7 @@ public class RemindScheduler {
 
         for (Reservation reservation : reservationsBetweenDates) {
             System.out.println("Reminder for: " + reservation.getCustomerEmail() + "for reservation: " + reservation.getId());
-//            mailService.sendEmail(reservation.getCustomerEmail(), reservation);
+            mailService.sendEmailForReservationRemind(reservation.getCustomerEmail(), reservation);
         }
     }
 }

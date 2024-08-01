@@ -58,7 +58,6 @@ public class ReservationController {
         if (response.getErrorReason() == null) {
             PaymentResponse paymentResponse = paymentServiceClient.createPayment(authorizationHeader, response.getReservationId());
 
-
             return ResponseEntity.ok(paymentResponse);
         } else if (response.getErrorReason().equals("NOT_SCREENING_AT_DATE")) {
             return ResponseEntity.status(409).body("We are not screening this movie at selected date!");

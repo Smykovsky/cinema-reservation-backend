@@ -1,11 +1,14 @@
 package pl.smyk.customerservice.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pl.smyk.customerservice.dto.ReservationDto;
 import pl.smyk.customerservice.dto.SeatDto;
 import pl.smyk.customerservice.dto.request.ReservationRequest;
 import pl.smyk.customerservice.dto.response.ReservationResponse;
+import pl.smyk.customerservice.event.ReservationChangeStatusEvent;
 import pl.smyk.customerservice.feignClient.AuthServiceClient;
 import pl.smyk.customerservice.mapper.MovieMapper;
 import pl.smyk.customerservice.mapper.ReservationMapper;
@@ -24,6 +27,7 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final AuthServiceClient authServiceClient;
     private final MovieService movieService;
+    private final ApplicationEventPublisher eventPublisher;
 
     private final Double SEAT_PRICE = 40.0;
 
@@ -129,10 +133,20 @@ public class ReservationService {
                 .build();
     }
 
+    @Transactional
     public void changePaymentStatusAsPaid(String reservationId) {
         Reservation reservation = findById(reservationId);
+        if (reservation == null) {
+            throw new RuntimeException("Reservation not found");
+        }
 
-        reservation.setPaymentStatus(PaymentStatus.PAID);
-        reservationRepository.save(reservation);
+        if (!PaymentStatus.PAID.equals(reservation.getPaymentStatus())) {
+            reservation.setPaymentStatus(PaymentStatus.PAID);
+            Reservation savedReservation = reservationRepository.save(reservation);
+
+            if (PaymentStatus.PAID.equals(savedReservation.getPaymentStatus())) {
+                eventPublisher.publishEvent(new ReservationChangeStatusEvent(savedReservation));
+            }
+        }
     }
 }
