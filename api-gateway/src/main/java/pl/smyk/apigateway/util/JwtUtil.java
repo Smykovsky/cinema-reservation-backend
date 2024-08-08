@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
+import java.util.List;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
@@ -43,5 +44,10 @@ public class JwtUtil {
       .build()
       .parseClaimsJws(token)
       .getBody();
+  }
+
+  public boolean hasRole(String token, String role) {
+    Claims claims = Jwts.parser().setSigningKey(getSignInKey()).parseClaimsJws(token).getBody();
+    return claims.get("roles", List.class).contains(role);
   }
 }

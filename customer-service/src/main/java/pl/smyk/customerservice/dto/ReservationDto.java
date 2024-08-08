@@ -4,8 +4,7 @@ import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import pl.smyk.customerservice.model.Movie;
-import pl.smyk.customerservice.model.Reservation;
+import pl.smyk.customerservice.model.PaymentStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,4 +20,6 @@ public class ReservationDto {
     private MovieDto movie;
     private LocalDateTime selectedPlayTime;
     private List<SeatDto> seats;
+    private Double totalPrice;
+    private PaymentStatus paymentStatus;
 }

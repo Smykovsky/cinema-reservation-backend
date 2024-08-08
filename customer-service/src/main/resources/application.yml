@@ -16,5 +16,17 @@ spring:
   data:
     mongodb:
       uri: mongodb://localhost:27017/reservations
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ksmyk.dev2000@gmail.com
+    password: umijnrbhxagjqlmd
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
   config:
     import: optional:configserver:http://localhost:8888

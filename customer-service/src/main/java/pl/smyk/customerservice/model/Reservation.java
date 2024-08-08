@@ -2,10 +2,7 @@ package pl.smyk.customerservice.model;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
@@ -19,6 +16,8 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Reservation {
     @MongoId
     private String id;
@@ -27,6 +26,8 @@ public class Reservation {
     private Movie movie;
     private LocalDateTime selectedPlayTime;
     private List<Seat> seats;
+    private Double totalPrice;
+    private PaymentStatus paymentStatus;
 
     @AllArgsConstructor
     @Getter
