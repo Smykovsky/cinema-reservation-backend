@@ -55,6 +55,11 @@ public class AuthController {
     return "Token is valid";
   }
 
+  @GetMapping("/test")
+  public String test() {
+      return "Test";
+  }
+
   @GetMapping("/user")
     public ResponseEntity<?> getCustomerData(@RequestHeader("Authorization") String authorizationHeader) {
       if (authorizationHeader == null && !authorizationHeader.startsWith("Bearer ")) {
