@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import pl.smyk.authservice.model.Customer;
 
 import java.security.Key;
 import java.util.Date;
@@ -64,7 +65,12 @@ public class JwtUtil {
     }
 
     private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, long jwtExpiration) {
+        Customer customer = (Customer) userDetails;
+        String firstName = customer.getFirstName();
+        String lastName = customer.getLastName();
         extraClaims.put("roles", userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList());
+        extraClaims.put("first_name", firstName);
+        extraClaims.put("last_name", lastName);
         return Jwts
                 .builder()
                 .setClaims(extraClaims)
