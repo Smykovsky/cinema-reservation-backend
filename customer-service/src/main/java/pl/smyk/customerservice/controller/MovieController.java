@@ -35,13 +35,13 @@ public class MovieController {
   }
 
   @GetMapping("/search/title")
-  public ResponseEntity<?> getMoviesByTitle(@RequestBody String title) {
+  public ResponseEntity<?> getMoviesByTitle(@RequestParam String title) {
     List<MovieDto> movieList = movieService.getMoviesByTitlePhrase(title);
     return ResponseEntity.ok(movieList);
   }
 
   @GetMapping("/search/genre")
-  public ResponseEntity<?> getMoviesByGenre(@RequestBody List<Genre> genres) {
+  public ResponseEntity<?> getMoviesByGenre(@RequestParam List<Genre> genres) {
     List<MovieDto> movieList = movieService.getMoviesByGenre(genres);
     return ResponseEntity.ok(movieList);
   }

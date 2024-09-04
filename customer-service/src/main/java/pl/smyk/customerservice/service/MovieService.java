@@ -40,8 +40,12 @@ public class MovieService {
     }
 
     public List<MovieDto> getMoviesByGenre(List<Genre> genres) {
-        List<Movie> movies = movieRepository.findByGenres(genres);
-        return movies.stream().map(MovieMapper.INSTANCE::movieToMovieDto).toList();
+        List<Movie> allMovies = movieRepository.findAll();
+        List<Movie> collectMovies = allMovies.stream()
+                .filter(movie -> movie.getGenres().stream().anyMatch(genre -> genres.contains(genre)))
+                .toList();
+
+        return collectMovies.stream().map(MovieMapper.INSTANCE::movieToMovieDto).toList();
     }
 
   public List<MovieDto> getMoviesByTitlePhrase(String title) {
