@@ -42,7 +42,7 @@ public class AuthController {
     public ResponseEntity<?> login (@RequestBody LoginRequest request) {
         Optional<Customer> optionalCustomer = customerService.findByEmail(request.getEmail());
         if (!optionalCustomer.isPresent()) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(404).body("Nie ma takiego użytkownika w naszej bazie!");
         }
 
         AuthenticationResponse login = authService.login(request);

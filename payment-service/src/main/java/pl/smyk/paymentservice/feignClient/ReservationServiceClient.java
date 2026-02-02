@@ -1,4 +1,4 @@
-package pl.smyk.paymentservice.FeignClient;
+package pl.smyk.paymentservice.feignClient;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;

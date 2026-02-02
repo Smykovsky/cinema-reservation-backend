@@ -1,22 +1,19 @@
 package pl.smyk.paymentservice.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import pl.smyk.paymentservice.FeignClient.AuthServiceClient;
-import pl.smyk.paymentservice.FeignClient.ReservationServiceClient;
+import pl.smyk.paymentservice.feignClient.AuthServiceClient;
+import pl.smyk.paymentservice.feignClient.ReservationServiceClient;
 import pl.smyk.paymentservice.dto.request.PaymentAcceptRequest;
-import pl.smyk.paymentservice.dto.request.PaymentRequest;
 import pl.smyk.paymentservice.dto.response.PaymentResponse;
 import pl.smyk.paymentservice.mapper.ResponseEntityMapper;
 import pl.smyk.paymentservice.service.PaymentService;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 
 @RestController
