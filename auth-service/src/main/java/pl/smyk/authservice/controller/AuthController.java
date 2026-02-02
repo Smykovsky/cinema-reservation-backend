@@ -5,11 +5,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pl.smyk.authservice.config.jwt.JwtUtil;
 import pl.smyk.authservice.dto.AuthenticationResponse;
-import pl.smyk.authservice.dto.CustomerDto;
+import pl.smyk.authservice.dto.UserDto;
 import pl.smyk.authservice.dto.LoginRequest;
 import pl.smyk.authservice.dto.RegisterRequest;
-import pl.smyk.authservice.mapper.CustomerMapper;
-import pl.smyk.authservice.model.Customer;
+import pl.smyk.authservice.mapper.UserMapper;
+import pl.smyk.authservice.model.User;
 import pl.smyk.authservice.service.AuthService;
 import pl.smyk.authservice.service.CustomerService;
 
@@ -40,7 +40,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login (@RequestBody LoginRequest request) {
-        Optional<Customer> optionalCustomer = customerService.findByEmail(request.getEmail());
+        Optional<User> optionalCustomer = customerService.findByEmail(request.getEmail());
         if (!optionalCustomer.isPresent()) {
             return ResponseEntity.status(404).body("Nie ma takiego użytkownika w naszej bazie!");
         }
@@ -68,8 +68,8 @@ public class AuthController {
 
       String token = authorizationHeader.substring(7);
       String email = jwtUtil.extractUsername(token);
-      Customer customer = customerService.findByEmail(email).orElseThrow();
-      CustomerDto customerDto = CustomerMapper.INSTANCE.customerToCustomerDto(customer);
-      return ResponseEntity.ok(customerDto);
+      User customer = customerService.findByEmail(email).orElseThrow();
+      UserDto userDto = UserMapper.INSTANCE.userToUserDto(customer);
+      return ResponseEntity.ok(userDto);
   }
 }

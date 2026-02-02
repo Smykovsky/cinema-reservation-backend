@@ -3,7 +3,7 @@ package pl.smyk.customerservice.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import pl.smyk.customerservice.dto.CustomerDto;
+import pl.smyk.customerservice.dto.UserDto;
 import pl.smyk.customerservice.dto.ReservationDto;
 import pl.smyk.customerservice.dto.request.ReservationRequest;
 import pl.smyk.customerservice.dto.response.PaymentResponse;
@@ -24,7 +24,7 @@ public class ReservationController {
 
     @GetMapping("")
     public ResponseEntity<?> getLoggedUserReservations(@RequestHeader("Authorization") String authorizationHeader) {
-        CustomerDto customer = authServiceClient.getCustomer(authorizationHeader);
+        UserDto customer = authServiceClient.getCustomer(authorizationHeader);
         if (customer == null) {
           return ResponseEntity.status(404).body("User not found");
         }
@@ -36,7 +36,7 @@ public class ReservationController {
 
     @GetMapping("{id}")
     public ResponseEntity<?> getLoggedUserReservationById(@RequestHeader("Authorization") String authorizationHeader, @PathVariable String id) {
-        CustomerDto customer = authServiceClient.getCustomer(authorizationHeader);
+        UserDto customer = authServiceClient.getCustomer(authorizationHeader);
         if (customer == null) {
           return ResponseEntity.status(404).body("User not found");
         }
@@ -48,7 +48,7 @@ public class ReservationController {
 
     @PostMapping("/reservation")
     public ResponseEntity<?> createReservation(@RequestHeader("Authorization") String authorizationHeader, @RequestBody ReservationRequest request) {
-        CustomerDto customer = authServiceClient.getCustomer(authorizationHeader);
+        UserDto customer = authServiceClient.getCustomer(authorizationHeader);
         if (customer == null) {
             return ResponseEntity.status(404).body("User not found!");
         }
@@ -70,7 +70,7 @@ public class ReservationController {
 
     @PostMapping("/{id}/update-paymentStatus-paid")
     public void updatePaymentStatusAsPaid(@RequestHeader("Authorization") String  authorizationHeader, @PathVariable String id) {
-        CustomerDto customer = authServiceClient.getCustomer(authorizationHeader);
+        UserDto customer = authServiceClient.getCustomer(authorizationHeader);
         if (customer == null) {
             return;
         }

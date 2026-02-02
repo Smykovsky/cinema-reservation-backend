@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 @Getter
 @Setter
 @Builder
-public class Customer implements UserDetails {
+public class User implements UserDetails {
     @MongoId
     private String customerId;
     private String email;

@@ -2,9 +2,9 @@ package pl.smyk.authservice.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import pl.smyk.authservice.dto.CustomerDto;
-import pl.smyk.authservice.mapper.CustomerMapper;
-import pl.smyk.authservice.model.Customer;
+import pl.smyk.authservice.dto.UserDto;
+import pl.smyk.authservice.mapper.UserMapper;
+import pl.smyk.authservice.model.User;
 import pl.smyk.authservice.repository.CustomerRepository;
 
 import java.util.Optional;
@@ -14,17 +14,17 @@ import java.util.Optional;
 public class CustomerService {
     private final CustomerRepository customerRepository;
 
-    public Optional<CustomerDto> findCustomerById(String id) {
-        Optional<Customer> byId = customerRepository.findById(id);
+    public Optional<UserDto> findCustomerById(String id) {
+        Optional<User> byId = customerRepository.findById(id);
 
-        return Optional.ofNullable(CustomerMapper.INSTANCE.customerToCustomerDto(byId.get()));
+        return Optional.ofNullable(UserMapper.INSTANCE.userToUserDto(byId.get()));
     }
 
-    public Optional<Customer> findByEmail(String email) {
+    public Optional<User> findByEmail(String email) {
         return customerRepository.findByEmail(email);
     }
 
-    public Customer saveCustomer(Customer customer) {
+    public User saveCustomer(User customer) {
         return customerRepository.save(customer);
     }
 }

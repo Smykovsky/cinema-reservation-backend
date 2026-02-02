@@ -3,7 +3,7 @@ package pl.smyk.customerservice.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import pl.smyk.customerservice.dto.CustomerDto;
+import pl.smyk.customerservice.dto.UserDto;
 import pl.smyk.customerservice.dto.MovieDto;
 import pl.smyk.customerservice.dto.response.MovieResponse;
 import pl.smyk.customerservice.feignClient.AuthServiceClient;
@@ -18,7 +18,7 @@ public class MovieManagementController {
 
   @PostMapping("/add-movie")
   public ResponseEntity<?> addMovie(@RequestHeader("Authorization") String authorizationHeader, @RequestBody MovieDto movieDto) {
-    CustomerDto customerDto = authServiceClient.getCustomer(authorizationHeader);
+    UserDto customerDto = authServiceClient.getCustomer(authorizationHeader);
     if (customerDto == null) {
       return ResponseEntity.status(404).body("Customer not found");
     }
@@ -34,7 +34,7 @@ public class MovieManagementController {
 
   @PatchMapping("/update-movie")
   public ResponseEntity<?> updateMovie(@RequestHeader("Authorization") String authorizationHeader, @RequestBody MovieDto movieDto) {
-    CustomerDto customerDto = authServiceClient.getCustomer(authorizationHeader);
+    UserDto customerDto = authServiceClient.getCustomer(authorizationHeader);
     if (customerDto == null) {
       return ResponseEntity.status(404).body("Customer not found!");
     }
@@ -49,7 +49,7 @@ public class MovieManagementController {
 
   @DeleteMapping("/delete-movie/{id}")
   public ResponseEntity<?> deleteMovie(@RequestHeader("Authorization") String authorizationHeader, @PathVariable String id) {
-    CustomerDto customerDto = authServiceClient.getCustomer(authorizationHeader);
+    UserDto customerDto = authServiceClient.getCustomer(authorizationHeader);
     if (customerDto == null) {
       return ResponseEntity.status(404).body("Customer not found!");
     }

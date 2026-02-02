@@ -1,12 +1,15 @@
-package pl.smyk.authservice.dto;
+package pl.smyk.customerservice.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import pl.smyk.authservice.model.Role;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Data
-public class CustomerDto {
+@AllArgsConstructor
+@NoArgsConstructor
+public class UserDto {
     private String email;
     private String firstName;
     private String lastName;

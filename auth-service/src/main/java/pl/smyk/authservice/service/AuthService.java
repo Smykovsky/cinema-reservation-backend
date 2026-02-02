@@ -10,7 +10,7 @@ import pl.smyk.authservice.config.jwt.JwtUtil;
 import pl.smyk.authservice.dto.AuthenticationResponse;
 import pl.smyk.authservice.dto.LoginRequest;
 import pl.smyk.authservice.dto.RegisterRequest;
-import pl.smyk.authservice.model.Customer;
+import pl.smyk.authservice.model.User;
 import pl.smyk.authservice.model.Role;
 
 import java.util.List;
@@ -34,14 +34,14 @@ public class AuthService {
                     .message("Podane hasła nie są takie same!")
                     .build();
         } else {
-            var customer = Customer.builder()
+            var customer = User.builder()
                     .email(request.getEmail())
                     .password(passwordEncoder.encode(request.getPassword()))
                     .firstName(request.getFirstName())
                     .lastName(request.getLastName())
                     .roles(List.of(Role.CUSTOMER, Role.OPERATOR))
                     .build();
-            Customer savedCustomer = customerService.saveCustomer(customer);
+            User savedCustomer = customerService.saveCustomer(customer);
             return AuthenticationResponse.builder()
                     .message("Pomyślnie utworzono konto!")
                     .build();
@@ -52,7 +52,7 @@ public class AuthService {
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
         System.out.println(authentication.isAuthenticated());
 
-        Customer customer = customerService.findByEmail(request.getEmail()).orElseThrow();
+        User customer = customerService.findByEmail(request.getEmail()).orElseThrow();
         String accessToken = jwtUtil.generateToken(customer);
         String refreshToken = jwtUtil.generateRefreshToken(customer);
         return AuthenticationResponse.builder()

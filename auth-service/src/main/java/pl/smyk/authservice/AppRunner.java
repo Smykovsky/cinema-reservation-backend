@@ -5,7 +5,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import pl.smyk.authservice.model.Customer;
+import pl.smyk.authservice.model.User;
 import pl.smyk.authservice.model.Role;
 import pl.smyk.authservice.service.CustomerService;
 
@@ -22,9 +22,9 @@ public class AppRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        template.dropCollection(Customer.class);
-        template.createCollection(Customer.class);
-        Customer c1 = Customer.builder()
+        template.dropCollection(User.class);
+        template.createCollection(User.class);
+        User c1 = User.builder()
           .firstName("Kamil")
           .lastName("Smyk")
           .email("smyku1232@wp.pl")
@@ -32,7 +32,7 @@ public class AppRunner implements CommandLineRunner {
           .roles(List.of(Role.CUSTOMER))
           .build();
 
-        Customer c2 = Customer.builder()
+        User c2 = User.builder()
                 .firstName("Kamill")
                 .lastName("Smykk")
                 .email("kamil.smyk00@gmail.com")
