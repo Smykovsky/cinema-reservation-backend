@@ -23,8 +23,12 @@ public class UserService {
         return Optional.ofNullable(UserMapper.INSTANCE.userToUserDto(byId.get()));
     }
 
-    public Optional<User> findByEmail(String email) {
-        return userRepository.findByEmail(email);
+    public Boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("Nie znaleziono takiego użytkownika."));
     }
 
     public User saveUser(User user) {

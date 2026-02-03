@@ -2,7 +2,6 @@ package pl.smyk.authservice.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import pl.smyk.authservice.config.jwt.JwtUtil;
 import pl.smyk.authservice.dto.*;
@@ -26,33 +25,23 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
-        if (userService.findByEmail(request.getEmail()).isPresent()) {
-            return ResponseEntity.status(409).body("Użytkownik o podanym adresie email już istnieje!");
-        }
-
-        if (!request.getPassword().equals(request.getPasswordConfirmed())) {
-            return ResponseEntity.status(400).body("Podane hasła nie zgadzają się!");
-        }
-
         AuthenticationResponse registerResponse = authService.register(request);
         ApiResponse<AuthenticationResponse> response = ApiResponse.of("Pomyślnie utworzono konto", 200, registerResponse);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        Optional<User> userOptional = userService.findByEmail(request.getEmail());
-        if (userOptional.isEmpty()) {
-            return ResponseEntity.status(404).body("Nie ma takiego użytkownika w naszej bazie!");
-        }
+        User user = userService.findByEmail(request.getEmail());
 
-        User user = userOptional.get();
         if (user.isTotpEnabled()) {
             if (request.getCode() == 0) {
-                return ResponseEntity.status(400).body("TOTP code is required.");
+                ApiResponse<Object> response = ApiResponse.of("Kod TOTP jest wymagany.", 400);
+                return ResponseEntity.status(response.getStatus()).body(response);
             }
             if (!totpService.verifyCode(user.getTotpSecret(), request.getCode())) {
-                return ResponseEntity.status(401).body("Invalid TOTP code.");
+                ApiResponse<Object> response = ApiResponse.of("Wprowadzono niepoprawny kod TOTP.", 401);
+                return ResponseEntity.status(response.getStatus()).body(response);
             }
         }
 
@@ -63,12 +52,8 @@ public class AuthController {
 
     @GetMapping("/user")
     public ResponseEntity<?> getUserData(@RequestHeader("X-User-Email") String email) {
-        Optional<User> byEmail = userService.findByEmail(email);
-        if (byEmail.isEmpty()) {
-            ApiResponse<UserDto> response = ApiResponse.of("Błąd podczas odczytywania danych użytkownika", 404, null);
-            return ResponseEntity.status(response.getStatus()).body(response);
-        }
-        User user = byEmail.get();
+        User user = userService.findByEmail(email);
+
         UserDto userDto = UserMapper.INSTANCE.userToUserDto(user);
         ApiResponse<UserDto> response = ApiResponse.of("Pomyślnie odczytano dane użytkownika", 200, userDto);
         return ResponseEntity.status(200).body(response);
@@ -83,44 +68,39 @@ public class AuthController {
 
     @PostMapping("/totp/enable")
     public ResponseEntity<?> enableTotp(@RequestHeader("X-User-Email") String email) {
-        Optional<User> userOptional = userService.findByEmail(email);
-        if (userOptional.isEmpty()) {
-            return ResponseEntity.status(404).body("User not found.");
-        }
-        User user = userOptional.get();
+        User user = userService.findByEmail(email);
+
         String secret = totpService.generateSecret();
         user.setTotpSecret(secret);
         user.setTotpEnabled(true);
         userService.save(user);
         String qrCode = totpService.generateQrCode(secret, user.getEmail());
         return ResponseEntity.ok(new TotpEnableResponse(secret, qrCode));
+        //poprawka
     }
 
     @PostMapping("/totp/verify")
     public ResponseEntity<?> verifyTotp(@RequestHeader("X-User-Email") String email, @RequestBody TotpVerifyRequest request) {
-        Optional<User> userOptional = userService.findByEmail(email);
-        if (userOptional.isEmpty()) {
-            return ResponseEntity.status(404).body("User not found.");
-        }
-        User user = userOptional.get();
+        User user = userService.findByEmail(email);
+
         if (!totpService.verifyCode(user.getTotpSecret(), request.getCode())) {
-            return ResponseEntity.status(401).body("Invalid TOTP code.");
+            ApiResponse<Object> response = ApiResponse.of("Wprowadzono niepoprawny kod TOTP.", 400);
+            return ResponseEntity.status(response.getStatus()).body(response);
         }
         user.setTotpEnabled(true);
         userService.save(user);
-        return ResponseEntity.ok("TOTP enabled successfully.");
+        ApiResponse<Object> response = ApiResponse.of("Pomyślnie włączono podwójną autentykację (TOTP).", 200);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @PostMapping("/totp/disable")
     public ResponseEntity<?> disableTotp(@RequestHeader("X-User-Email") String email) {
-        Optional<User> userOptional = userService.findByEmail(email);
-        if (userOptional.isEmpty()) {
-            return ResponseEntity.status(404).body("User not found.");
-        }
-        User user = userOptional.get();
+        User user = userService.findByEmail(email);
+
         user.setTotpEnabled(false);
         user.setTotpSecret(null);
         userService.save(user);
-        return ResponseEntity.ok("TOTP disabled successfully.");
+        ApiResponse<Object> response = ApiResponse.of("Pomyślnie wyłączono podwójną autentykację (TOTP).", 200);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 }

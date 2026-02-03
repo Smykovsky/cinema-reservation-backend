@@ -10,6 +10,8 @@ import pl.smyk.authservice.config.jwt.JwtUtil;
 import pl.smyk.authservice.dto.AuthenticationResponse;
 import pl.smyk.authservice.dto.LoginRequest;
 import pl.smyk.authservice.dto.RegisterRequest;
+import pl.smyk.authservice.exception.PasswordNotMatchException;
+import pl.smyk.authservice.exception.UserAlreadyExistsException;
 import pl.smyk.authservice.model.User;
 import pl.smyk.authservice.model.Role;
 
@@ -26,38 +28,35 @@ public class AuthService {
 
 
     public AuthenticationResponse register(RegisterRequest request) {
-        if (userService.findByEmail(request.getEmail()).isPresent()) {
-            return AuthenticationResponse.builder()
-                    .message("Istnieje użytkownik z takim adresem email!")
-                    .build();
-        } else if (!request.getPassword().equals(request.getPasswordConfirmed())) {
-            return AuthenticationResponse.builder()
-                    .message("Podane hasła nie są takie same!")
-                    .build();
-        } else {
-            var user = User.builder()
-                    .email(request.getEmail())
-                    .password(passwordEncoder.encode(request.getPassword()))
-                    .firstName(request.getFirstName())
-                    .lastName(request.getLastName())
-                    .roles(List.of(Role.USER, Role.OPERATOR))
-                    .build();
-            User savedUser = userService.saveUser(user);
-            return AuthenticationResponse.builder()
-                    .message("Pomyślnie utworzono konto!")
-                    .build();
+        if (userService.existsByEmail(request.getEmail())) {
+            throw new UserAlreadyExistsException("Użytkownik z takim adresem email już istnieje!");
         }
+
+        if (!request.getPassword().equals(request.getPasswordConfirmed())) {
+            throw new PasswordNotMatchException("Podane hasła się nie zgadzają!");
+        }
+
+        var user = User.builder()
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .roles(List.of(Role.USER, Role.OPERATOR))
+                .build();
+
+        User savedUser = userService.saveUser(user);
+
+        return AuthenticationResponse.builder()
+                .message("Pomyślnie utworzono konto!")
+                .build();
     }
 
     public AuthenticationResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
         System.out.println(authentication.isAuthenticated());
 
-        Optional<User> byEmail = userService.findByEmail(request.getEmail());
-        if (byEmail.isEmpty()) {
-            return null;
-        }
-        User user = byEmail.get();
+        User user = userService.findByEmail(request.getEmail());
+
         String accessToken = jwtUtil.generateToken(user);
         String refreshToken = jwtUtil.generateRefreshToken(user);
         return AuthenticationResponse.builder()

@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import pl.smyk.authservice.dto.ApiResponse;
+import pl.smyk.authservice.exception.PasswordNotMatchException;
+import pl.smyk.authservice.exception.UserAlreadyExistsException;
 import pl.smyk.authservice.exception.UserNotFoundException;
 
 @ControllerAdvice
@@ -19,6 +21,18 @@ public class GlobalExceptionController {
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ApiResponse<Object>> handleUserNotFound(UserNotFoundException e) {
         ApiResponse<Object> response = ApiResponse.of(e.getMessage(), HttpStatus.NOT_FOUND.value());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ResponseEntity<ApiResponse<Object>> handleUserAlreadyExists(UserAlreadyExistsException e) {
+        ApiResponse<Object> response = ApiResponse.of(e.getMessage(), HttpStatus.CONFLICT.value());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(PasswordNotMatchException.class)
+    public ResponseEntity<ApiResponse<Object>> handleUserNotFound(PasswordNotMatchException e) {
+        ApiResponse<Object> response = ApiResponse.of(e.getMessage(), HttpStatus.CONFLICT.value());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 }
