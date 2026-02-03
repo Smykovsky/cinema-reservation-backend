@@ -4,10 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pl.smyk.authservice.config.jwt.JwtUtil;
-import pl.smyk.authservice.dto.AuthenticationResponse;
-import pl.smyk.authservice.dto.UserDto;
-import pl.smyk.authservice.dto.LoginRequest;
-import pl.smyk.authservice.dto.RegisterRequest;
+import pl.smyk.authservice.dto.*;
 import pl.smyk.authservice.mapper.UserMapper;
 import pl.smyk.authservice.model.User;
 import pl.smyk.authservice.service.AuthService;
@@ -24,8 +21,8 @@ public class AuthController {
     private final JwtUtil jwtUtil;
 
 
-  @PostMapping("/register")
-    public ResponseEntity<?> register (@RequestBody RegisterRequest request) {
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         if (customerService.findByEmail(request.getEmail()).isPresent()) {
             return ResponseEntity.status(409).body("Użytkonik o podanym adresie email już istnieje!");
         }
@@ -34,42 +31,45 @@ public class AuthController {
             return ResponseEntity.status(400).body("Podane hasła nie zgadzają się!");
         }
 
-        AuthenticationResponse register = authService.register(request);
-        return ResponseEntity.ok(register);
+        AuthenticationResponse registerResponse = authService.register(request);
+        ApiResponse<AuthenticationResponse> response = ApiResponse.of("Pomyślnie utworzono konto", 200, registerResponse);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login (@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         Optional<User> optionalCustomer = customerService.findByEmail(request.getEmail());
         if (!optionalCustomer.isPresent()) {
             return ResponseEntity.status(404).body("Nie ma takiego użytkownika w naszej bazie!");
         }
 
-        AuthenticationResponse login = authService.login(request);
-        return ResponseEntity.ok(login);
+        AuthenticationResponse loginResponse = authService.login(request);
+        ApiResponse<AuthenticationResponse> response = ApiResponse.of("Pomyślnie zalogowano!", 200, loginResponse);
+        return ResponseEntity.ok(response);
     }
 
-  @GetMapping("/validate")
-  public String validateToken(@RequestParam("token") String token) {
-    authService.validateToken(token);
-    return "Token is valid";
-  }
-
-  @GetMapping("/test")
-  public String test() {
-      return "Test";
-  }
-
-  @GetMapping("/user")
+    @GetMapping("/user")
     public ResponseEntity<?> getCustomerData(@RequestHeader("Authorization") String authorizationHeader) {
-      if (authorizationHeader == null && !authorizationHeader.startsWith("Bearer ")) {
-          return ResponseEntity.status(401).body("Inavlid token!");
-      }
+        if (authorizationHeader == null && !authorizationHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(401).body("Inavlid token!");
+        }
 
-      String token = authorizationHeader.substring(7);
-      String email = jwtUtil.extractUsername(token);
-      User customer = customerService.findByEmail(email).orElseThrow();
-      UserDto userDto = UserMapper.INSTANCE.userToUserDto(customer);
-      return ResponseEntity.ok(userDto);
-  }
+        String token = authorizationHeader.substring(7);
+        String email = jwtUtil.extractUsername(token);
+        User customer = customerService.findByEmail(email).orElseThrow();
+        UserDto userDto = UserMapper.INSTANCE.userToUserDto(customer);
+        ApiResponse<UserDto> response = ApiResponse.of("Pomyślnie odczytano dane użytkownika", 200, userDto);
+        return ResponseEntity.status(200).body(response);
+    }
+
+    @PutMapping("/user/{userId}")
+    public ResponseEntity<?> updateUser(@RequestHeader("Authorization") String authorizationHeader, @PathVariable Long userId, @RequestBody UserUpdateRequest request) {
+        if (authorizationHeader == null && !authorizationHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(401).body("Inavlid token!");
+        }
+
+        this.customerService.updateUser(userId, request);
+        ApiResponse<Object> response = ApiResponse.of("Pomyślnie zaktualizowano profil użytkownika", 200, null);
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
 }
