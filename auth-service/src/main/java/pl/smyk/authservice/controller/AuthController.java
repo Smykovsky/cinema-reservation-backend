@@ -10,6 +10,8 @@ import pl.smyk.authservice.model.User;
 import pl.smyk.authservice.service.AuthService;
 import pl.smyk.authservice.service.UserService;
 
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -21,8 +23,8 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
-        if (userService.findByEmail(request.getEmail()) != null) {
-            return ResponseEntity.status(409).body("Użytkonik o podanym adresie email już istnieje!");
+        if (userService.findByEmail(request.getEmail()).isPresent()) {
+            return ResponseEntity.status(409).body("Użytkownik o podanym adresie email już istnieje!");
         }
 
         if (!request.getPassword().equals(request.getPasswordConfirmed())) {
@@ -36,8 +38,8 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        User user = userService.findByEmail(request.getEmail());
-        if (user != null) {
+        Optional<User> user = userService.findByEmail(request.getEmail());
+        if (user.isEmpty()) {
             return ResponseEntity.status(404).body("Nie ma takiego użytkownika w naszej bazie!");
         }
 
@@ -54,7 +56,12 @@ public class AuthController {
 
         String token = authorizationHeader.substring(7);
         String email = jwtUtil.extractUsername(token);
-        User user = userService.findByEmail(email);
+        Optional<User> byEmail = userService.findByEmail(email);
+        if (byEmail.isEmpty()) {
+            ApiResponse<UserDto> response = ApiResponse.of("Błąd podczas odczytywania danych użytkownika", 404, null);
+            return ResponseEntity.status(response.getStatus()).body(response);
+        }
+        User user = byEmail.get();
         UserDto userDto = UserMapper.INSTANCE.userToUserDto(user);
         ApiResponse<UserDto> response = ApiResponse.of("Pomyślnie odczytano dane użytkownika", 200, userDto);
         return ResponseEntity.status(200).body(response);

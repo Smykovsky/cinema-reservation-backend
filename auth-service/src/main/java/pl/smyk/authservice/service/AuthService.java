@@ -14,6 +14,7 @@ import pl.smyk.authservice.model.User;
 import pl.smyk.authservice.model.Role;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +26,7 @@ public class AuthService {
 
 
     public AuthenticationResponse register(RegisterRequest request) {
-        if (userService.findByEmail(request.getEmail()) != null) {
+        if (userService.findByEmail(request.getEmail()).isPresent()) {
             return AuthenticationResponse.builder()
                     .message("Istnieje użytkownik z takim adresem email!")
                     .build();
@@ -52,7 +53,11 @@ public class AuthService {
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
         System.out.println(authentication.isAuthenticated());
 
-        User user = userService.findByEmail(request.getEmail());
+        Optional<User> byEmail = userService.findByEmail(request.getEmail());
+        if (byEmail.isEmpty()) {
+            return null;
+        }
+        User user = byEmail.get();
         String accessToken = jwtUtil.generateToken(user);
         String refreshToken = jwtUtil.generateRefreshToken(user);
         return AuthenticationResponse.builder()
