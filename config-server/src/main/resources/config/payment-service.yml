@@ -7,6 +7,10 @@ spring:
   profiles:
     active: native
 
+springdoc:
+  api-docs:
+    path: /api/payment/v3/api-docs
+
 eureka:
   client:
     service-url:

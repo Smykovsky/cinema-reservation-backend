@@ -14,10 +14,10 @@ spring:
           filters:
             - AuthenticationFilter
 
-        - id: customer-service
-          uri: lb://customer-service
+        - id: movie-service
+          uri: lb://movie-service
           predicates:
-            - Path=/api/customer/**, /api/movie/**
+            - Path=/api/movie/**
           filters:
             - AuthenticationFilter
 
@@ -27,6 +27,16 @@ spring:
             - Path=/api/auth/**
           filters:
             - AuthenticationFilter
+
+springdoc:
+  swagger-ui:
+    urls:
+      - name: auth-service
+        url: /api/auth/v3/api-docs
+      - name: movie-service
+        url: /api/movie/v3/api-docs
+      - name: payment-service
+        url: /api/payment/v3/api-docs
 eureka:
   client:
     service-url:

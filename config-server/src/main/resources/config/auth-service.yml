@@ -5,6 +5,10 @@ spring:
   application:
     name: auth-service
 
+springdoc:
+  api-docs:
+    path: /api/auth/v3/api-docs
+
 eureka:
   client:
     service-url:
