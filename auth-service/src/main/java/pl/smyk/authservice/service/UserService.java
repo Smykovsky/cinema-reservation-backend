@@ -8,32 +8,32 @@ import pl.smyk.authservice.dto.UserUpdateRequest;
 import pl.smyk.authservice.exception.UserNotFoundException;
 import pl.smyk.authservice.mapper.UserMapper;
 import pl.smyk.authservice.model.User;
-import pl.smyk.authservice.repository.CustomerRepository;
+import pl.smyk.authservice.repository.UserRepository;
 
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class CustomerService {
-    private final CustomerRepository customerRepository;
+public class UserService {
+    private final UserRepository userRepository;
 
-    public Optional<UserDto> findCustomerById(Long id) {
-        Optional<User> byId = customerRepository.findById(id);
+    public Optional<UserDto> findByUserId(Long id) {
+        Optional<User> byId = userRepository.findById(id);
 
         return Optional.ofNullable(UserMapper.INSTANCE.userToUserDto(byId.get()));
     }
 
-    public Optional<User> findByEmail(String email) {
-        return customerRepository.findByEmail(email);
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("Nie ma takiego użytkownika w bazie"));
     }
 
-    public User saveCustomer(User customer) {
-        return customerRepository.save(customer);
+    public User saveUser(User user) {
+        return userRepository.save(user);
     }
 
     @Transactional
     public void updateUser(Long userId, UserUpdateRequest request) {
-        User user = customerRepository.findById(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User with id: " + userId + " not found"));
 
         Optional.ofNullable(request.getEmail())

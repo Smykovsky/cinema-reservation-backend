@@ -8,22 +8,20 @@ import pl.smyk.authservice.dto.*;
 import pl.smyk.authservice.mapper.UserMapper;
 import pl.smyk.authservice.model.User;
 import pl.smyk.authservice.service.AuthService;
-import pl.smyk.authservice.service.CustomerService;
-
-import java.util.Optional;
+import pl.smyk.authservice.service.UserService;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
-    private final CustomerService customerService;
+    private final UserService userService;
     private final JwtUtil jwtUtil;
 
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
-        if (customerService.findByEmail(request.getEmail()).isPresent()) {
+        if (userService.findByEmail(request.getEmail()) != null) {
             return ResponseEntity.status(409).body("Użytkonik o podanym adresie email już istnieje!");
         }
 
@@ -38,8 +36,8 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        Optional<User> optionalCustomer = customerService.findByEmail(request.getEmail());
-        if (!optionalCustomer.isPresent()) {
+        User user = userService.findByEmail(request.getEmail());
+        if (user != null) {
             return ResponseEntity.status(404).body("Nie ma takiego użytkownika w naszej bazie!");
         }
 
@@ -49,15 +47,15 @@ public class AuthController {
     }
 
     @GetMapping("/user")
-    public ResponseEntity<?> getCustomerData(@RequestHeader("Authorization") String authorizationHeader) {
+    public ResponseEntity<?> getUserData(@RequestHeader("Authorization") String authorizationHeader) {
         if (authorizationHeader == null && !authorizationHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(401).body("Inavlid token!");
         }
 
         String token = authorizationHeader.substring(7);
         String email = jwtUtil.extractUsername(token);
-        User customer = customerService.findByEmail(email).orElseThrow();
-        UserDto userDto = UserMapper.INSTANCE.userToUserDto(customer);
+        User user = userService.findByEmail(email);
+        UserDto userDto = UserMapper.INSTANCE.userToUserDto(user);
         ApiResponse<UserDto> response = ApiResponse.of("Pomyślnie odczytano dane użytkownika", 200, userDto);
         return ResponseEntity.status(200).body(response);
     }
@@ -68,7 +66,7 @@ public class AuthController {
             return ResponseEntity.status(401).body("Inavlid token!");
         }
 
-        this.customerService.updateUser(userId, request);
+        this.userService.updateUser(userId, request);
         ApiResponse<Object> response = ApiResponse.of("Pomyślnie zaktualizowano profil użytkownika", 200, null);
         return ResponseEntity.status(response.getStatus()).body(response);
     }

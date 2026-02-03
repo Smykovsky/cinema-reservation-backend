@@ -10,7 +10,7 @@ import java.util.List;
 @Getter
 @RequiredArgsConstructor
 public enum Role {
-    CUSTOMER, OPERATOR;
+    USER, OPERATOR;
 
     private Role role;
 

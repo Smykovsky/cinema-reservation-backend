@@ -7,6 +7,6 @@ import pl.smyk.authservice.model.User;
 import java.util.Optional;
 
 @Repository
-public interface CustomerRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 }

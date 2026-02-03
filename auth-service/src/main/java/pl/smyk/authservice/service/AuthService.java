@@ -18,14 +18,14 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-    private final CustomerService customerService;
+    private final UserService userService;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
 
 
     public AuthenticationResponse register(RegisterRequest request) {
-        if (customerService.findByEmail(request.getEmail()).isPresent()) {
+        if (userService.findByEmail(request.getEmail()) != null) {
             return AuthenticationResponse.builder()
                     .message("Istnieje użytkownik z takim adresem email!")
                     .build();
@@ -34,14 +34,14 @@ public class AuthService {
                     .message("Podane hasła nie są takie same!")
                     .build();
         } else {
-            var customer = User.builder()
+            var user = User.builder()
                     .email(request.getEmail())
                     .password(passwordEncoder.encode(request.getPassword()))
                     .firstName(request.getFirstName())
                     .lastName(request.getLastName())
-                    .roles(List.of(Role.CUSTOMER, Role.OPERATOR))
+                    .roles(List.of(Role.USER, Role.OPERATOR))
                     .build();
-            User savedCustomer = customerService.saveCustomer(customer);
+            User savedUser = userService.saveUser(user);
             return AuthenticationResponse.builder()
                     .message("Pomyślnie utworzono konto!")
                     .build();
@@ -52,9 +52,9 @@ public class AuthService {
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
         System.out.println(authentication.isAuthenticated());
 
-        User customer = customerService.findByEmail(request.getEmail()).orElseThrow();
-        String accessToken = jwtUtil.generateToken(customer);
-        String refreshToken = jwtUtil.generateRefreshToken(customer);
+        User user = userService.findByEmail(request.getEmail());
+        String accessToken = jwtUtil.generateToken(user);
+        String refreshToken = jwtUtil.generateRefreshToken(user);
         return AuthenticationResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
