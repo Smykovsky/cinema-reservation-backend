@@ -12,9 +12,11 @@
         <module name="auth-service" />
         <module name="payment-service" />
         <module name="eureka-server" />
-        <module name="customer-service" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="customer-service" target="17" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">

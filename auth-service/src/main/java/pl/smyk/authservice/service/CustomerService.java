@@ -14,7 +14,7 @@ import java.util.Optional;
 public class CustomerService {
     private final CustomerRepository customerRepository;
 
-    public Optional<UserDto> findCustomerById(String id) {
+    public Optional<UserDto> findCustomerById(Long id) {
         Optional<User> byId = customerRepository.findById(id);
 
         return Optional.ofNullable(UserMapper.INSTANCE.userToUserDto(byId.get()));

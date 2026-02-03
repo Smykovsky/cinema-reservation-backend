@@ -1,8 +1,7 @@
 package pl.smyk.authservice.model;
 
+import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.MongoId;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -10,13 +9,16 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Document(collection = "customer")
+@Entity
+@Table(name = "users")
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 @Builder
 public class User implements UserDetails {
-    @MongoId
-    private String customerId;
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     private String email;
     private String password;
     private String firstName;

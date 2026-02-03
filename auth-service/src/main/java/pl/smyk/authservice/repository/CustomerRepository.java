@@ -1,10 +1,12 @@
 package pl.smyk.authservice.repository;
 
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 import pl.smyk.authservice.model.User;
 
 import java.util.Optional;
 
-public interface CustomerRepository extends MongoRepository<User, String> {
+@Repository
+public interface CustomerRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 }
