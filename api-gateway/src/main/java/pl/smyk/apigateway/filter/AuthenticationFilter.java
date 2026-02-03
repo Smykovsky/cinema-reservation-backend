@@ -1,5 +1,6 @@
 package pl.smyk.apigateway.filter;
 
+import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
@@ -13,7 +14,9 @@ import org.springframework.web.server.ServerWebExchange;
 import pl.smyk.apigateway.util.JwtUtil;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
@@ -55,12 +58,24 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
           jwtUtil.validateToken(authHeader);
           logger.info("Token validated successfully");
 
+          Claims claims = jwtUtil.extractAllClaims(authHeader);
+          String email = claims.getSubject();
+          List<String> roles = (List<String>) claims.get("roles");
+
           if (validator.requiresOperatorRole.test(request)) {
-            if (!jwtUtil.hasRole(authHeader, "OPERATOR")) {
+            if (!roles.contains("OPERATOR")) {
               logger.warning("Operator role required");
               return handleUnauthorized(exchange, "Operator role required");
             }
           }
+
+          ServerHttpRequest modifiedRequest = exchange.getRequest().mutate()
+                  .header("X-User-Email", email)
+                  .header("X-User-Roles", roles.stream().collect(Collectors.joining(",")))
+                  .build();
+
+          return chain.filter(exchange.mutate().request(modifiedRequest).build());
+
         } catch (Exception e) {
           logger.severe("Invalid or expired token: " + e.getMessage());
           return handleUnauthorized(exchange, "Invalid or expired token");

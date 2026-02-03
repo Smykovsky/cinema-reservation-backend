@@ -10,4 +10,5 @@ public class UserDto {
     private String firstName;
     private String lastName;
     private List<String> roles;
+    private boolean totpEnabled;
 }

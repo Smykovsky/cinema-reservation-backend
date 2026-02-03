@@ -14,6 +14,7 @@ public interface UserMapper {
     @Mapping(source = "firstName", target = "firstName")
     @Mapping(source = "lastName", target = "lastName")
     @Mapping(source = "roles", target = "roles")
+    @Mapping(source = "totpEnabled", target = "totpEnabled")
     UserDto userToUserDto(User user);
 
 }

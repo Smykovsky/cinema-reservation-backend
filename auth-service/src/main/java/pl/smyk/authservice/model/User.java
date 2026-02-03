@@ -24,6 +24,8 @@ public class User implements UserDetails {
     private String firstName;
     private String lastName;
     private Collection<Role> roles;
+    private boolean totpEnabled;
+    private String totpSecret;
 
 
     @Override

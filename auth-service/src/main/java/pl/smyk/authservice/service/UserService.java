@@ -31,6 +31,10 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    public void save(User user) {
+        userRepository.save(user);
+    }
+
     @Transactional
     public void updateUser(Long userId, UserUpdateRequest request) {
         User user = userRepository.findById(userId)
