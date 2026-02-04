@@ -16,16 +16,15 @@ import pl.smyk.authservice.model.User;
 import pl.smyk.authservice.model.Role;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
     private final UserService userService;
+    private final TotpService totpService;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-
 
     public AuthenticationResponse register(RegisterRequest request) {
         if (userService.existsByEmail(request.getEmail())) {
@@ -44,7 +43,7 @@ public class AuthService {
                 .roles(List.of(Role.USER, Role.OPERATOR))
                 .build();
 
-        User savedUser = userService.saveUser(user);
+        userService.saveUser(user);
 
         return AuthenticationResponse.builder()
                 .message("Pomyślnie utworzono konto!")
@@ -52,20 +51,30 @@ public class AuthService {
     }
 
     public AuthenticationResponse login(LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
-        System.out.println(authentication.isAuthenticated());
+        // Uwierzytelnienie przez Spring Security
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+        );
 
         User user = userService.findByEmail(request.getEmail());
 
+        // Walidacja TOTP jeśli jest włączony
+        if (user.isTotpEnabled()) {
+            totpService.validateTotpForLogin(user, request.getCode());
+        }
+
+        // Generowanie tokenów
         String accessToken = jwtUtil.generateToken(user);
         String refreshToken = jwtUtil.generateRefreshToken(user);
+
         return AuthenticationResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .message("Pomyślnie zalogowano!")
                 .build();
     }
+
     public void validateToken(String token) {
-      jwtUtil.validateToken(token);
+        jwtUtil.validateToken(token);
     }
 }

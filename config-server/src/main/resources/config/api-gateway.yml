@@ -17,7 +17,7 @@ spring:
         - id: movie-service
           uri: lb://movie-service
           predicates:
-            - Path=/api/movie/**
+            - Path=/api/movie/**, /api/genre/**
           filters:
             - AuthenticationFilter
 

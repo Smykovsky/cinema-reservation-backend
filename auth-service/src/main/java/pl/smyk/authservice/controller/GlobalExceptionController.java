@@ -2,37 +2,72 @@ package pl.smyk.authservice.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
-import pl.smyk.authservice.dto.ApiResponse;
-import pl.smyk.authservice.exception.PasswordNotMatchException;
-import pl.smyk.authservice.exception.UserAlreadyExistsException;
-import pl.smyk.authservice.exception.UserNotFoundException;
+import pl.smyk.authservice.dto.ErrorResponse;
+import pl.smyk.authservice.exception.*;
 
-@ControllerAdvice
+@RestControllerAdvice
 public class GlobalExceptionController {
+
     @ExceptionHandler(NoHandlerFoundException.class)
-    public ResponseEntity<Object> handleResourceNotFound(NoHandlerFoundException ex) {
-        ApiResponse<Object> response = ApiResponse.of("Nie ma takiej ścieżki API :(", HttpStatus.NOT_FOUND.value());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(NoHandlerFoundException ex) {
+        ErrorResponse error = new ErrorResponse("Nie ma takiej ścieżki API :(");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
     @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ApiResponse<Object>> handleUserNotFound(UserNotFoundException e) {
-        ApiResponse<Object> response = ApiResponse.of(e.getMessage(), HttpStatus.NOT_FOUND.value());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    public ResponseEntity<ErrorResponse> handleUserNotFound(UserNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
     @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<ApiResponse<Object>> handleUserAlreadyExists(UserAlreadyExistsException e) {
-        ApiResponse<Object> response = ApiResponse.of(e.getMessage(), HttpStatus.CONFLICT.value());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    public ResponseEntity<ErrorResponse> handleUserAlreadyExists(UserAlreadyExistsException ex) {
+        ErrorResponse error = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
     @ExceptionHandler(PasswordNotMatchException.class)
-    public ResponseEntity<ApiResponse<Object>> handleUserNotFound(PasswordNotMatchException e) {
-        ApiResponse<Object> response = ApiResponse.of(e.getMessage(), HttpStatus.CONFLICT.value());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    public ResponseEntity<ErrorResponse> handlePasswordNotMatch(PasswordNotMatchException ex) {
+        ErrorResponse error = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    // ===== TOTP Exceptions =====
+
+    @ExceptionHandler(TotpRequiredException.class)
+    public ResponseEntity<ErrorResponse> handleTotpRequired(TotpRequiredException ex) {
+        ErrorResponse error = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(InvalidTotpCodeException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidTotp(InvalidTotpCodeException ex) {
+        ErrorResponse error = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
+    @ExceptionHandler(TotpNotConfiguredException.class)
+    public ResponseEntity<ErrorResponse> handleTotpNotConfigured(TotpNotConfiguredException ex) {
+        ErrorResponse error = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(TotpAlreadyEnabledException.class)
+    public ResponseEntity<ErrorResponse> handleTotpAlreadyEnabled(TotpAlreadyEnabledException ex) {
+        ErrorResponse error = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    // ===== Generic Exception Handler =====
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
+        ErrorResponse error = new ErrorResponse("Wystąpił nieoczekiwany błąd serwera");
+        // Loguj pełny stack trace dla debugowania
+        ex.printStackTrace();
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 }
