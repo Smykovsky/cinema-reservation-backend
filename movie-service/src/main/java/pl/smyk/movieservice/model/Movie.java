@@ -1,47 +1,35 @@
 package pl.smyk.movieservice.model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.util.Set;
-import java.util.UUID;
 
-@Entity
-@Table(name = "movies")
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Entity
+@Table(name = "movies")
 public class Movie {
+
     @Id
-    @GeneratedValue (strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String title;
 
-    @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "duration_minutes", nullable = false)
-    private Integer durationMinutes;
+    @Column(nullable = false)
+    private Integer duration; // in minutes
 
-    @Column(name = "release_date")
+    private String genre;
+
+    @Column(nullable = false)
     private LocalDate releaseDate;
-
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "movie_genres",
-            joinColumns = @JoinColumn(name = "movie_id"),
-            inverseJoinColumns = @JoinColumn(name = "genre_id")
-    )
-    private Set<Genre> genres;
-
-    @Column(name = "poster_url", length = 500)
-    private String posterUrl;
-
-    @Column(name = "age_rating", length = 10)
-    private String ageRating;
 }
