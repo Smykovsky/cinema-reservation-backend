@@ -7,6 +7,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import pl.smyk.movieservice.dto.CreateMovieRequest;
 import pl.smyk.movieservice.dto.MovieDto;
+import pl.smyk.movieservice.dto.MovieFilterDto;
 import pl.smyk.movieservice.dto.UpdateMovieRequest;
 import pl.smyk.movieservice.exception.MovieAlreadyExistsException;
 import pl.smyk.movieservice.exception.MovieNotFoundException;
@@ -29,24 +30,8 @@ public class MovieService {
     private final GenreRepository genreRepository;
     private final MovieMapper movieMapper;
 
-    public Page<MovieDto> getAllMovies(
-            String title,
-            String genre,
-            Integer minDuration,
-            Integer maxDuration,
-            LocalDate releaseDateFrom,
-            LocalDate releaseDateTo,
-            Pageable pageable) {
-
-        Specification<Movie> spec = Specification
-                .where(MovieSpecification.hasTitle(title))
-                .and(MovieSpecification.hasGenre(genre))
-                .and(MovieSpecification.hasDurationGreaterThanOrEqual(minDuration))
-                .and(MovieSpecification.hasDurationLessThanOrEqual(maxDuration))
-                .and(MovieSpecification.hasReleaseDateAfterOrEqual(releaseDateFrom))
-                .and(MovieSpecification.hasReleaseDateBeforeOrEqual(releaseDateTo));
-
-        Page<Movie> movies = movieRepository.findAll(spec, pageable);
+    public Page<MovieDto> getAllMovies(MovieFilterDto filter, Pageable pageable) {
+        Page<Movie> movies = movieRepository.findAll(filter.toSpecification(), pageable);
         return movies.map(movieMapper::toDto);
     }
 

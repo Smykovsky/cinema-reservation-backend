@@ -10,9 +10,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import pl.smyk.movieservice.dto.CreateMovieRequest;
-import pl.smyk.movieservice.dto.MovieDto;
-import pl.smyk.movieservice.dto.UpdateMovieRequest;
+import pl.smyk.movieservice.dto.*;
 import pl.smyk.movieservice.service.MovieService;
 
 import java.time.LocalDate;
@@ -25,18 +23,12 @@ public class MovieController {
     private final MovieService movieService;
 
     @GetMapping
-    public ResponseEntity<Page<MovieDto>> getAllMovies(
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) String genre,
-            @RequestParam(required = false) Integer minDuration,
-            @RequestParam(required = false) Integer maxDuration,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate releaseDateFrom,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate releaseDateTo,
+    public ResponseEntity<PageResponse<MovieDto>> getAllMovies(
+            MovieFilterDto filter,
             @PageableDefault(size = 20, sort = "releaseDate", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        return ResponseEntity.ok(movieService.getAllMovies(
-                title, genre, minDuration, maxDuration,
-                releaseDateFrom, releaseDateTo, pageable));
+        Page<MovieDto> page = movieService.getAllMovies(filter, pageable);
+        return ResponseEntity.ok(PageResponse.of(page));
     }
 
     @GetMapping("/{id}")
