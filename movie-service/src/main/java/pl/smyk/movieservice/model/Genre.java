@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.Set;
-import java.util.UUID;
 
 @Entity
 @Table(name = "genres")
@@ -17,7 +16,7 @@ import java.util.UUID;
 public class Genre {
 
     @Id
-    @GeneratedValue (strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false, updatable = false)
     private Long id;
 
@@ -25,6 +24,6 @@ public class Genre {
     private String name;
 
     @JsonIgnore
-    @ManyToMany(mappedBy = "genres")
+    @ManyToMany(mappedBy = "genres", fetch = FetchType.LAZY)
     private Set<Movie> movies;
 }

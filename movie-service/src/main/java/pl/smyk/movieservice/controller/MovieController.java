@@ -2,6 +2,11 @@ package pl.smyk.movieservice.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,18 +15,28 @@ import pl.smyk.movieservice.dto.MovieDto;
 import pl.smyk.movieservice.dto.UpdateMovieRequest;
 import pl.smyk.movieservice.service.MovieService;
 
-import java.util.List;
+import java.time.LocalDate;
 
 @RestController
-@RequestMapping("/api/movies")
+@RequestMapping("/api/movie")
 @RequiredArgsConstructor
 public class MovieController {
 
     private final MovieService movieService;
 
     @GetMapping
-    public ResponseEntity<List<MovieDto>> getAllMovies() {
-        return ResponseEntity.ok(movieService.getAllMovies());
+    public ResponseEntity<Page<MovieDto>> getAllMovies(
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String genre,
+            @RequestParam(required = false) Integer minDuration,
+            @RequestParam(required = false) Integer maxDuration,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate releaseDateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate releaseDateTo,
+            @PageableDefault(size = 20, sort = "releaseDate", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        return ResponseEntity.ok(movieService.getAllMovies(
+                title, genre, minDuration, maxDuration,
+                releaseDateFrom, releaseDateTo, pageable));
     }
 
     @GetMapping("/{id}")

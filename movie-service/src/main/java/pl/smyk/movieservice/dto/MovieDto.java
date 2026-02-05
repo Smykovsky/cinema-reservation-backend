@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 @Data
 @Builder
@@ -16,6 +17,6 @@ public class MovieDto {
     private String title;
     private String description;
     private Integer duration;
-    private String genre;
+    private Set<String> genres;
     private LocalDate releaseDate;
 }
