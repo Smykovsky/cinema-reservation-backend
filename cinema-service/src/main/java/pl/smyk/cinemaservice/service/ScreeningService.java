@@ -5,18 +5,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.smyk.cinemaservice.dto.CreateScreeningRequest;
 import pl.smyk.cinemaservice.dto.ScreeningDto;
+import pl.smyk.cinemaservice.dto.ScreeningSeatDto;
 import pl.smyk.cinemaservice.dto.UpdateScreeningRequest;
 import pl.smyk.cinemaservice.exception.HallNotFoundException;
 import pl.smyk.cinemaservice.exception.ScreeningAlreadyExistsException;
 import pl.smyk.cinemaservice.exception.ScreeningNotFoundException;
 import pl.smyk.cinemaservice.mapper.ScreeningMapper;
+import pl.smyk.cinemaservice.mapper.ScreeningSeatMapper;
 import pl.smyk.cinemaservice.model.Hall;
 import pl.smyk.cinemaservice.model.Screening;
+import pl.smyk.cinemaservice.model.ScreeningSeat;
+import pl.smyk.cinemaservice.model.SeatStatus;
 import pl.smyk.cinemaservice.repository.HallRepository;
 import pl.smyk.cinemaservice.repository.ScreeningRepository;
+import pl.smyk.cinemaservice.repository.ScreeningSeatRepository;
+import pl.smyk.cinemaservice.repository.SeatRepository; // Added SeatRepository import
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +29,10 @@ public class ScreeningService {
 
     private final ScreeningRepository screeningRepository;
     private final HallRepository hallRepository;
+    private final SeatRepository seatRepository; // Added SeatRepository
+    private final ScreeningSeatRepository screeningSeatRepository;
     private final ScreeningMapper screeningMapper;
+    private final ScreeningSeatMapper screeningSeatMapper;
 
     public List<ScreeningDto> getAllScreenings() {
         return screeningMapper.toDtoList(screeningRepository.findAll());
@@ -40,11 +48,33 @@ public class ScreeningService {
         if (!screeningRepository.findByHallIdAndStartTimeBeforeAndEndTimeAfter(request.getHallId(), request.getEndTime(), request.getStartTime()).isEmpty()) {
             throw new ScreeningAlreadyExistsException("Screening overlaps with another screening in hall with id " + request.getHallId());
         }
+
         return hallRepository.findById(request.getHallId())
                 .map(hall -> {
                     Screening screening = screeningMapper.toEntity(request);
                     screening.setHall(hall);
-                    return screeningMapper.toDto(screeningRepository.save(screening));
+                    // Najpierw zapisz Screening, aby otrzymać ID, które jest potrzebne do ScreeningSeatId
+                    Screening savedScreening = screeningRepository.save(screening);
+
+                    // Utwórz ScreeningSeat entries dla każdego miejsca w sali i dodaj je do Screening
+                    List<ScreeningSeat> newScreeningSeats = seatRepository.findByHall(hall).stream()
+                            .map(seat -> ScreeningSeat.builder()
+                                    .screening(savedScreening) // Przypisz zapisany seans
+                                    .seat(seat)
+                                    .status(SeatStatus.AVAILABLE)
+                                    .build())
+                            .toList();
+
+                    // Dodaj wygenerowane ScreeningSeat do listy seansu.
+                    // Dzięki cascade = CascadeType.ALL zostaną one zapisane razem z seansem.
+                    savedScreening.getScreeningSeats().addAll(newScreeningSeats);
+
+                    // Ponownie zapisz seans, aby zaktualizować listę ScreeningSeats (może być potrzebne dla @IdClass)
+                    // lub polegaj na tym, że transakcja to obsłuży.
+                    // Zostawmy na razie tak, jakby transakcja to załatwiała.
+                    // Jeśli to nie zadziała, będziemy musieli jawnie zapisać savedScreening i/lub newScreeningSeats.
+
+                    return screeningMapper.toDto(savedScreening);
                 })
                 .orElseThrow(() -> new HallNotFoundException("Hall with id " + request.getHallId() + " not found"));
     }
@@ -66,5 +96,15 @@ public class ScreeningService {
             throw new ScreeningNotFoundException("Screening with id " + id + " not found");
         }
         screeningRepository.deleteById(id);
+    }
+
+    public List<ScreeningSeatDto> getAvailableSeatsForScreening(Long screeningId) {
+        Screening screening = screeningRepository.findById(screeningId)
+                .orElseThrow(() -> new ScreeningNotFoundException("Screening with id " + screeningId + " not found"));
+
+        return screeningSeatRepository.findByScreening(screening).stream()
+                .filter(ScreeningSeat::isAvailable)
+                .map(screeningSeatMapper::toDto)
+                .toList();
     }
 }

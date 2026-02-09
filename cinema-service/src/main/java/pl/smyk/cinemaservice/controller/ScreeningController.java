@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pl.smyk.cinemaservice.dto.CreateScreeningRequest;
 import pl.smyk.cinemaservice.dto.ScreeningDto;
+import pl.smyk.cinemaservice.dto.ScreeningSeatDto;
 import pl.smyk.cinemaservice.dto.UpdateScreeningRequest;
 import pl.smyk.cinemaservice.service.ScreeningService;
 
@@ -46,5 +47,10 @@ public class ScreeningController {
     public ResponseEntity<Void> deleteScreening(@PathVariable Long id) {
         screeningService.deleteScreening(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/seats/available")
+    public ResponseEntity<List<ScreeningSeatDto>> getAvailableSeatsForScreening(@PathVariable Long id) {
+        return ResponseEntity.ok(screeningService.getAvailableSeatsForScreening(id));
     }
 }
