@@ -21,6 +21,13 @@ spring:
           filters:
             - AuthenticationFilter
 
+        - id: cinema-service
+          uri: lb://cinema-service
+          predicates:
+            - Path=/api/cinema/**
+          filters:
+            - AuthenticationFilter
+
         - id: auth-service
           uri: lb://auth-service
           predicates:
