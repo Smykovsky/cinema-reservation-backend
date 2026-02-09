@@ -18,7 +18,7 @@ import java.util.UUID;
 public interface ScreeningSeatRepository extends JpaRepository<ScreeningSeat, ScreeningSeatId> {
 
     // Znajdź wszystkie miejsca dla seansu
-    List<ScreeningSeat> findByScreeningId(UUID screeningId);
+    List<ScreeningSeat> findByScreeningId(Long screeningId);
 
     // Znajdź miejsca z pessimistic lock (dla rezerwacji!)
     @Lock(LockModeType.PESSIMISTIC_WRITE)

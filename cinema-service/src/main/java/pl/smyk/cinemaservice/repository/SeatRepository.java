@@ -7,16 +7,15 @@ import pl.smyk.cinemaservice.model.SeatType;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Repository
 public interface SeatRepository extends JpaRepository<Seat, Long> {
 
-    List<Seat> findByHallId(UUID hallId);
+    List<Seat> findByHallId(Long hallId);
 
-    List<Seat> findByHallIdAndSeatType(UUID hallId, SeatType seatType);
+    List<Seat> findByHallIdAndSeatType(Long hallId, SeatType seatType);
 
-    Optional<Seat> findByHallIdAndRowAndNumber(UUID hallId, String row, Integer number);
+    Optional<Seat> findByHallIdAndRowAndNumber(Long hallId, Integer row, Integer number);
 
-    boolean existsByHallIdAndRowAndNumber(UUID hallId, String row, Integer number);
+    boolean existsByHallIdAndRowAndNumber(Long hallId, Integer row, Integer number);
 }
