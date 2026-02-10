@@ -8,8 +8,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class BookingEventConsumer {
 
-    // Example listener for a generic booking event from another service
-    @KafkaListener(topics = "some_other_service_booking_event", groupId = "${spring.kafka.consumer.group-id}")
+    @KafkaListener(topics = "some_other_service_booking_event", groupId = "${kafka.consumer.group-id}")
     public void listenToBookingEvents(String message) {
         log.info("Received message from Kafka: {}", message);
         // Process the booking event

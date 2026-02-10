@@ -10,10 +10,8 @@ import pl.smyk.cinemaservice.model.ScreeningSeat;
 
 import pl.smyk.cinemaservice.model.ScreeningSeatId;
 
-
-
 import java.util.List;
-
+import java.util.Set;
 
 
 @Repository
@@ -21,5 +19,6 @@ import java.util.List;
 public interface ScreeningSeatRepository extends JpaRepository<ScreeningSeat, ScreeningSeatId> {
 
     List<ScreeningSeat> findByScreening(Screening screening);
+    List<ScreeningSeat> findByScreeningAndSeatIdIn(Screening screening, Set<Long> seatIds);
 
 }

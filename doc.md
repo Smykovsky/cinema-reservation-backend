@@ -155,8 +155,8 @@ BookingSeats
 
 ### Komunikacja REST (wywołuje synchronicznie)
 - `User Service: GET /users/{id}` - walidacja użytkownika
-- `Screening Service: GET /screenings/{id}` - dane seansu
-- `Screening Service: PUT /screenings/{id}/seats/reserve` - blokada miejsc
+- `Cinema Service Service: GET /screenings/{id}` - dane seansu
+- `Cinema Service: PUT /screenings/{id}/seats/reserve` - blokada miejsc
 - `Payment Service: POST /payments` - inicjalizacja płatności
 
 ### Kafka Events (Publisher)

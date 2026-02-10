@@ -11,11 +11,16 @@ import pl.smyk.bookingservice.service.BookingService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/bookings")
+@RequestMapping("/api/booking")
 @RequiredArgsConstructor
 public class BookingController {
 
     private final BookingService bookingService;
+
+    @GetMapping("/test")
+    public String test() {
+        return "test";
+    }
 
     @PostMapping
     public ResponseEntity<BookingDetailsResponse> createBooking(@RequestBody @Valid CreateBookingRequest request) {

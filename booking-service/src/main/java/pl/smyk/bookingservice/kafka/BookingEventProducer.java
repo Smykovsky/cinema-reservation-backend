@@ -12,7 +12,9 @@ import pl.smyk.bookingservice.dto.BookingDetailsResponse;
 public class BookingEventProducer {
 
     private static final String TOPIC_BOOKING_CREATED = "booking_created";
+    private static final String TOPIC_BOOKING_CONFIRMED = "booking_confirmed";
     private static final String TOPIC_BOOKING_CANCELLED = "booking_cancelled";
+    private static final String TOPIC_BOOKING_EXPIRED = "booking_expired";
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
@@ -21,8 +23,18 @@ public class BookingEventProducer {
         kafkaTemplate.send(TOPIC_BOOKING_CREATED, booking.getId().toString(), booking);
     }
 
+    public void sendBookingConfirmedEvent(Long bookingId) {
+        log.info("Producing booking confirmed event for booking ID: {}", bookingId);
+        kafkaTemplate.send(TOPIC_BOOKING_CONFIRMED, bookingId.toString(), bookingId);
+    }
+
     public void sendBookingCancelledEvent(Long bookingId) {
         log.info("Producing booking cancelled event for booking ID: {}", bookingId);
         kafkaTemplate.send(TOPIC_BOOKING_CANCELLED, bookingId.toString(), bookingId);
+    }
+
+    public void sendBookingExpiredEvent(Long bookingId) {
+        log.info("Producing booking expired event for booking ID: {}", bookingId);
+        kafkaTemplate.send(TOPIC_BOOKING_EXPIRED, bookingId.toString(), bookingId);
     }
 }

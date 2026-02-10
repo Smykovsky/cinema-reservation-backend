@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.smyk.cinemaservice.dto.CreateScreeningRequest;
+import pl.smyk.cinemaservice.dto.ReserveSeatsRequest;
 import pl.smyk.cinemaservice.dto.ScreeningDto;
 import pl.smyk.cinemaservice.dto.ScreeningSeatDto;
 import pl.smyk.cinemaservice.dto.UpdateScreeningRequest;
@@ -11,15 +12,18 @@ import pl.smyk.cinemaservice.exception.HallHasNoSeatsException;
 import pl.smyk.cinemaservice.exception.HallNotFoundException;
 import pl.smyk.cinemaservice.exception.ScreeningAlreadyExistsException;
 import pl.smyk.cinemaservice.exception.ScreeningNotFoundException;
+import pl.smyk.cinemaservice.exception.SeatNotAvailableException; // Import new exception
 import pl.smyk.cinemaservice.mapper.ScreeningMapper;
 import pl.smyk.cinemaservice.mapper.ScreeningSeatMapper;
 import pl.smyk.cinemaservice.model.*;
 import pl.smyk.cinemaservice.repository.HallRepository;
 import pl.smyk.cinemaservice.repository.ScreeningRepository;
 import pl.smyk.cinemaservice.repository.ScreeningSeatRepository;
-import pl.smyk.cinemaservice.repository.SeatRepository; // Added SeatRepository import
+import pl.smyk.cinemaservice.repository.SeatRepository;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +31,7 @@ public class ScreeningService {
 
     private final ScreeningRepository screeningRepository;
     private final HallRepository hallRepository;
-    private final SeatRepository seatRepository; // Added SeatRepository
+    private final SeatRepository seatRepository;
     private final ScreeningSeatRepository screeningSeatRepository;
     private final ScreeningMapper screeningMapper;
     private final ScreeningSeatMapper screeningSeatMapper;
@@ -51,7 +55,6 @@ public class ScreeningService {
                 .map(hall -> {
                     Screening screening = screeningMapper.toEntity(request);
                     screening.setHall(hall);
-                    // Najpierw zapisz Screening, aby otrzymać ID, które jest potrzebne do ScreeningSeatId
                     Screening savedScreening = screeningRepository.save(screening);
 
                     List<Seat> seatsInHall = seatRepository.findByHall(hall);
@@ -59,10 +62,9 @@ public class ScreeningService {
                         throw new HallHasNoSeatsException("Hall with id " + hall.getId() + " has no seats defined. Cannot create screening.");
                     }
 
-                    // Utwórz ScreeningSeat entries dla każdego miejsca w sali i dodaj je do Screening
                     List<ScreeningSeat> newScreeningSeats = seatsInHall.stream()
                             .map(seat -> ScreeningSeat.builder()
-                                    .screening(savedScreening) // Przypisz zapisany seans
+                                    .screening(savedScreening)
                                     .seat(seat)
                                     .status(SeatStatus.AVAILABLE)
                                     .build())
@@ -91,6 +93,28 @@ public class ScreeningService {
             throw new ScreeningNotFoundException("Screening with id " + id + " not found");
         }
         screeningRepository.deleteById(id);
+    }
+
+    @Transactional
+    public void reserveSeats(Long screeningId, ReserveSeatsRequest request) {
+        Screening screening = screeningRepository.findById(screeningId)
+                .orElseThrow(() -> new ScreeningNotFoundException("Screening with id " + screeningId + " not found"));
+
+        Set<Long> requestedSeatIds = request.getSeatIds().stream().collect(Collectors.toSet());
+
+        List<ScreeningSeat> seatsToReserve = screeningSeatRepository.findByScreeningAndSeatIdIn(screening, requestedSeatIds);
+
+        if (seatsToReserve.size() != requestedSeatIds.size()) {
+            throw new SeatNotAvailableException("One or more requested seats not found for screening " + screeningId);
+        }
+
+        for (ScreeningSeat screeningSeat : seatsToReserve) {
+            if (screeningSeat.getStatus() != SeatStatus.AVAILABLE) {
+                throw new SeatNotAvailableException("Seat " + screeningSeat.getSeat().getId() + " is not available.");
+            }
+            screeningSeat.setStatus(SeatStatus.RESERVED);
+        }
+        screeningSeatRepository.saveAll(seatsToReserve);
     }
 
     public List<ScreeningSeatDto> getAvailableSeatsForScreening(Long screeningId) {
