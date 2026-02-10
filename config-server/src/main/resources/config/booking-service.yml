@@ -1,23 +1,23 @@
-server:
-  port: 8084
-
 spring:
-  application:
-    name: booking-service
-
-springdoc:
-  api-docs:
-    path: /api/booking/v3/api-docs
+  datasource:
+    url: jdbc:postgresql://localhost:5432/booking
+    username: postgres
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
-    config:
-      uri: http://localhost:8888
-      fail-fast: true
-      retry:
-        maxAttempts: 3
-        initialInterval: 1000
-        multiplier: 1.2
-        maxInterval: 2000
+      defaultZone: http://localhost:8761/eureka
+  instance:
+    hostname: localhost
+    instance-id: ${spring.application.name}:${random.value}
+
+server:
+  port: 8085
