@@ -11,6 +11,6 @@ public interface CinemaServiceFeignClient {
     @GetMapping("/{id}")
     ScreeningResponse getScreeningById(@PathVariable("id") Long id);
 
-    @PutMapping("/{id}/seats/reserve")
+    @PostMapping("/{id}/seats/reserve")
     void reserveSeats(@PathVariable("id") Long id, @RequestBody ReserveSeatsRequest request);
 }

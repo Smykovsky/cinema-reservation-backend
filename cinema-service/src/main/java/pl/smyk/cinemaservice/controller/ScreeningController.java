@@ -50,7 +50,7 @@ public class ScreeningController {
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/{id}/seats/reserve")
+    @PutMapping("/{id}/seats/reserve") // Changed to PutMapping
     public ResponseEntity<Void> reserveSeats(@PathVariable("id") Long id, @Valid @RequestBody ReserveSeatsRequest request) {
         screeningService.reserveSeats(id, request);
         return ResponseEntity.noContent().build();
@@ -59,5 +59,10 @@ public class ScreeningController {
     @GetMapping("/{id}/seats/available")
     public ResponseEntity<List<ScreeningSeatDto>> getAvailableSeatsForScreening(@PathVariable Long id) {
         return ResponseEntity.ok(screeningService.getAvailableSeatsForScreening(id));
+    }
+
+    @GetMapping("/{id}/seats") // New endpoint to get all seats
+    public ResponseEntity<List<ScreeningSeatDto>> getAllSeatsForScreening(@PathVariable Long id) {
+        return ResponseEntity.ok(screeningService.getAllSeatsForScreening(id));
     }
 }

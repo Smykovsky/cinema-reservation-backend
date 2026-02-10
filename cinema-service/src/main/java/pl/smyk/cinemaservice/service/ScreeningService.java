@@ -126,4 +126,13 @@ public class ScreeningService {
                 .map(screeningSeatMapper::toDto)
                 .toList();
     }
+
+    public List<ScreeningSeatDto> getAllSeatsForScreening(Long screeningId) {
+        Screening screening = screeningRepository.findById(screeningId)
+                .orElseThrow(() -> new ScreeningNotFoundException("Screening with id " + screeningId + " not found"));
+
+        return screeningSeatRepository.findByScreening(screening).stream()
+                .map(screeningSeatMapper::toDto)
+                .toList();
+    }
 }
