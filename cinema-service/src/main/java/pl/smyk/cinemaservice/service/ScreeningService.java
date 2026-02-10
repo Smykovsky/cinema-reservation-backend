@@ -7,15 +7,13 @@ import pl.smyk.cinemaservice.dto.CreateScreeningRequest;
 import pl.smyk.cinemaservice.dto.ScreeningDto;
 import pl.smyk.cinemaservice.dto.ScreeningSeatDto;
 import pl.smyk.cinemaservice.dto.UpdateScreeningRequest;
+import pl.smyk.cinemaservice.exception.HallHasNoSeatsException;
 import pl.smyk.cinemaservice.exception.HallNotFoundException;
 import pl.smyk.cinemaservice.exception.ScreeningAlreadyExistsException;
 import pl.smyk.cinemaservice.exception.ScreeningNotFoundException;
 import pl.smyk.cinemaservice.mapper.ScreeningMapper;
 import pl.smyk.cinemaservice.mapper.ScreeningSeatMapper;
-import pl.smyk.cinemaservice.model.Hall;
-import pl.smyk.cinemaservice.model.Screening;
-import pl.smyk.cinemaservice.model.ScreeningSeat;
-import pl.smyk.cinemaservice.model.SeatStatus;
+import pl.smyk.cinemaservice.model.*;
 import pl.smyk.cinemaservice.repository.HallRepository;
 import pl.smyk.cinemaservice.repository.ScreeningRepository;
 import pl.smyk.cinemaservice.repository.ScreeningSeatRepository;
@@ -56,8 +54,13 @@ public class ScreeningService {
                     // Najpierw zapisz Screening, aby otrzymać ID, które jest potrzebne do ScreeningSeatId
                     Screening savedScreening = screeningRepository.save(screening);
 
+                    List<Seat> seatsInHall = seatRepository.findByHall(hall);
+                    if (seatsInHall.isEmpty()) {
+                        throw new HallHasNoSeatsException("Hall with id " + hall.getId() + " has no seats defined. Cannot create screening.");
+                    }
+
                     // Utwórz ScreeningSeat entries dla każdego miejsca w sali i dodaj je do Screening
-                    List<ScreeningSeat> newScreeningSeats = seatRepository.findByHall(hall).stream()
+                    List<ScreeningSeat> newScreeningSeats = seatsInHall.stream()
                             .map(seat -> ScreeningSeat.builder()
                                     .screening(savedScreening) // Przypisz zapisany seans
                                     .seat(seat)
@@ -65,15 +68,7 @@ public class ScreeningService {
                                     .build())
                             .toList();
 
-                    // Dodaj wygenerowane ScreeningSeat do listy seansu.
-                    // Dzięki cascade = CascadeType.ALL zostaną one zapisane razem z seansem.
                     savedScreening.getScreeningSeats().addAll(newScreeningSeats);
-
-                    // Ponownie zapisz seans, aby zaktualizować listę ScreeningSeats (może być potrzebne dla @IdClass)
-                    // lub polegaj na tym, że transakcja to obsłuży.
-                    // Zostawmy na razie tak, jakby transakcja to załatwiała.
-                    // Jeśli to nie zadziała, będziemy musieli jawnie zapisać savedScreening i/lub newScreeningSeats.
-
                     return screeningMapper.toDto(savedScreening);
                 })
                 .orElseThrow(() -> new HallNotFoundException("Hall with id " + request.getHallId() + " not found"));

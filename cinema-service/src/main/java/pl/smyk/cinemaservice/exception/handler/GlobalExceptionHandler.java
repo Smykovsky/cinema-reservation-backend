@@ -7,31 +7,68 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import pl.smyk.cinemaservice.exception.*;
 
 import pl.smyk.cinemaservice.dto.ErrorResponse;
+
+import pl.smyk.cinemaservice.exception.HallHasNoSeatsException; // Nowy import
+
 import java.time.LocalDateTime;
 
 
+
 @ControllerAdvice
+
 public class GlobalExceptionHandler {
 
+
+
     @ExceptionHandler(CinemaNotFoundException.class)
+
     public ResponseEntity<ErrorResponse> handleCinemaNotFoundException(CinemaNotFoundException ex) {
+
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+
     }
+
+
 
     @ExceptionHandler(CinemaAlreadyExistsException.class)
+
     public ResponseEntity<ErrorResponse> handleCinemaAlreadyExistsException(CinemaAlreadyExistsException ex) {
+
         return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
+
     }
+
+
 
     @ExceptionHandler(HallNotFoundException.class)
+
     public ResponseEntity<ErrorResponse> handleHallNotFoundException(HallNotFoundException ex) {
+
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+
     }
 
+
+
     @ExceptionHandler(HallAlreadyExistsException.class)
+
     public ResponseEntity<ErrorResponse> handleHallAlreadyExistsException(HallAlreadyExistsException ex) {
+
         return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
+
     }
+
+
+
+    @ExceptionHandler(HallHasNoSeatsException.class)
+
+    public ResponseEntity<ErrorResponse> handleHallHasNoSeatsException(HallHasNoSeatsException ex) {
+
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+
+    }
+
+
 
     @ExceptionHandler(ScreeningNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleScreeningNotFoundException(ScreeningNotFoundException ex) {
