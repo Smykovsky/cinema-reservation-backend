@@ -11,6 +11,7 @@
         <module name="auth-service" />
         <module name="payment-service" />
         <module name="cinema-service" />
+        <module name="booking-service" />
         <module name="api-gateway" />
         <module name="movie-service" />
         <module name="eureka-server" />
@@ -24,6 +25,7 @@
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="api-gateway" options="-parameters" />
       <module name="auth-service" options="-parameters" />
+      <module name="booking-service" options="-parameters" />
       <module name="cinema-service" options="-parameters" />
       <module name="config-server" options="-parameters" />
       <module name="customer-service" options="-parameters" />
