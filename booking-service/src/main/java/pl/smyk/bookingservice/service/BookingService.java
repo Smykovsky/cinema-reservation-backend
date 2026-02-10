@@ -6,6 +6,7 @@ import pl.smyk.bookingservice.dto.BookingDetailsResponse;
 import pl.smyk.bookingservice.dto.CreateBookingRequest;
 import pl.smyk.bookingservice.exception.BookingNotFoundException;
 import pl.smyk.bookingservice.exception.InvalidBookingRequestException;
+import pl.smyk.bookingservice.kafka.BookingEventProducer;
 import pl.smyk.bookingservice.model.Booking;
 import pl.smyk.bookingservice.model.BookingSeat;
 import pl.smyk.bookingservice.model.BookingStatus;
@@ -24,6 +25,7 @@ public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final BookingSeatRepository bookingSeatRepository;
+    private final BookingEventProducer bookingEventProducer;
 
     private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int BOOKING_NUMBER_LENGTH = 8;
@@ -76,8 +78,9 @@ public class BookingService {
 
         bookingSeatRepository.saveAll(bookingSeats);
 
-        // Build and return response
-        return buildBookingDetailsResponse(savedBooking, bookingSeats);
+        BookingDetailsResponse response = buildBookingDetailsResponse(savedBooking, bookingSeats);
+        bookingEventProducer.sendBookingCreatedEvent(response); // Send event
+        return response;
     }
 
     public BookingDetailsResponse getBookingDetails(Long bookingId) {
@@ -95,6 +98,7 @@ public class BookingService {
         // In a real scenario, implement logic to release seats, notify other services, etc.
         booking.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
+        bookingEventProducer.sendBookingCancelledEvent(bookingId); // Send event
     }
 
     private BookingDetailsResponse buildBookingDetailsResponse(Booking booking, List<BookingSeat> bookingSeats) {
