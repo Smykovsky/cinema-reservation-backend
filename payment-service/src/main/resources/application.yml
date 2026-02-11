@@ -1,21 +1,23 @@
-#server:
-#  port: 8082
-#
-#spring:
-#  application:
-#    name: payment-service
-#
-#eureka:
-#  client:
-#    service-url:
-#      defaultZone: http://localhost:8761/eureka/
-
 spring:
-  application:
-    name: payment-service
   config:
     import: optional:configserver:http://localhost:8888
 
+  application:
+    name: payment-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/auth
+    username: postgres
+    password:
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
 STRIPE_SECRET_KEY: sk_test_51NfnCAKFJTkwIyHA0FFLb02Kl7C3Q8rRq3Y621ateqprGP2DgIZbZ1awrcmpF8Ktphg2qUE09HF5YQFGSIOtE4sI00jVdUnjvJ
 STRIPE_PUBLIC_KEY: pk_test_51NfnCAKFJTkwIyHABbg9OkB3hy7PLzk0QHSpkxUDsZXL1g9GXhkvpnXHm5iNyFroCaufYuJLYvNZyt9kClli4czc00UNKT8rK4

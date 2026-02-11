@@ -1,146 +1,147 @@
 package pl.smyk.paymentservice.service;
 
-import com.stripe.exception.StripeException;
-import com.stripe.model.Coupon;
-import com.stripe.model.PaymentIntent;
-import com.stripe.model.PaymentIntentCollection;
-import com.stripe.param.PaymentIntentConfirmParams;
-import com.stripe.param.PaymentIntentConfirmParams.PaymentMethodOptions.Blik;
-import com.stripe.param.PaymentIntentListParams;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import pl.smyk.paymentservice.dto.response.PaymentResponse;
+import org.springframework.web.server.ResponseStatusException;
+import pl.smyk.paymentservice.dto.PaymentCompletedEvent;
+import pl.smyk.paymentservice.dto.PaymentFailedEvent;
+import pl.smyk.paymentservice.dto.PaymentInitializationRequest;
+import pl.smyk.paymentservice.dto.PaymentResponse;
+import pl.smyk.paymentservice.dto.PaymentRefundedEvent;
+import pl.smyk.paymentservice.dto.RefundRequest;
+import pl.smyk.paymentservice.dto.RefundResponse;
+import pl.smyk.paymentservice.kafka.PaymentEventProducer;
+import pl.smyk.paymentservice.model.Payment;
+import pl.smyk.paymentservice.model.Refund;
+import pl.smyk.paymentservice.repository.PaymentRepository;
+import pl.smyk.paymentservice.repository.RefundRepository;
 
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-
-import static com.stripe.param.PaymentIntentConfirmParams.PaymentMethodData.Type.BLIK;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class PaymentService {
-  private int RETRY_COUNT = 0;
-  private final int MAX_RETRY_COUNT = 12;
-  private final int DELAY_MILLIS = 2000;
 
-    public PaymentIntent findPaymentIntentById(String id) throws StripeException {
-        PaymentIntent retrieve = PaymentIntent.retrieve(id);
-        if (retrieve == null) {
-            return null;
-        }
-        return retrieve;
+    private final PaymentRepository paymentRepository;
+    private final RefundRepository refundRepository;
+    private final PaymentEventProducer paymentEventProducer;
 
+    public PaymentResponse initializePayment(PaymentInitializationRequest request) {
+        Payment payment = Payment.builder()
+                .bookingId(request.getBookingId())
+                .amount(request.getAmount())
+                .paymentMethod(request.getPaymentMethod())
+                .status(Payment.PaymentStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        payment = paymentRepository.save(payment);
+        log.info("Payment initialized for booking ID: {}, Payment ID: {}", payment.getBookingId(), payment.getId());
+
+        // In a real scenario, this would integrate with a payment gateway (e.g., Stripe, PayPal).
+        // For now, we'll simulate a successful payment.
+        // The webhook will later update the status.
+        return mapToPaymentResponse(payment);
     }
 
-    public PaymentIntent createPaymentIntent(String customerEmail, String reservationId, Double amount) throws StripeException {
-        Map<String, Object> params = new HashMap<>();
-        params.put("amount", (int) (amount * 100));
-        params.put("currency", "PLN");
-        params.put("payment_method_types", Collections.singletonList("blik"));
-        params.put("confirmation_method", "manual");
-
-        Map<String, Object> metadata = new HashMap<>();
-        metadata.put("reservation_id", reservationId);
-        metadata.put("customer_email", customerEmail);
-        params.put("metadata", metadata);
-
-
-        return PaymentIntent.create(params);
+    public PaymentResponse getPaymentById(Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found"));
+        return mapToPaymentResponse(payment);
     }
 
-    public String confirmBlikPayment(String paymentId, String code) {
-        try {
-            PaymentIntent paymentIntent = findPaymentIntentById(paymentId);
+    public void handlePaymentCallback(Long paymentId, String providerTransactionId, boolean success) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found"));
 
-            PaymentIntentConfirmParams confirmParams = PaymentIntentConfirmParams.builder()
-                    .setPaymentMethodData(PaymentIntentConfirmParams.PaymentMethodData.builder().setType(BLIK).build())
-                    .setPaymentMethodOptions(PaymentIntentConfirmParams.PaymentMethodOptions.builder()
-                            .setBlik(Blik.builder().setCode(code).build())
-                            .build())
-                    .build();
-
-            if (!code.equals("123456")) {
-                return "blik_code_error";
-            }
-            paymentIntent.confirm(confirmParams);
-
-            try {
-                Thread.sleep(10000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Thread was interrupted during sleep", e);
-            }
-
-            return pollPaymentStatus(paymentId);
-        } catch (StripeException e) {
-            throw new RuntimeException(e);
+        if (success) {
+            payment.setStatus(Payment.PaymentStatus.COMPLETED);
+            payment.setProviderTransactionId(providerTransactionId);
+            paymentRepository.save(payment);
+            log.info("Payment ID: {} completed successfully.", paymentId);
+            paymentEventProducer.sendPaymentCompletedEvent(PaymentCompletedEvent.builder()
+                    .paymentId(payment.getId())
+                    .bookingId(payment.getBookingId())
+                    .amount(payment.getAmount())
+                    .paymentMethod(payment.getPaymentMethod())
+                    .providerTransactionId(providerTransactionId)
+                    .completedAt(LocalDateTime.now())
+                    .build());
+        } else {
+            payment.setStatus(Payment.PaymentStatus.FAILED);
+            paymentRepository.save(payment);
+            log.warn("Payment ID: {} failed.", paymentId);
+            paymentEventProducer.sendPaymentFailedEvent(PaymentFailedEvent.builder()
+                    .paymentId(payment.getId())
+                    .bookingId(payment.getBookingId())
+                    .amount(payment.getAmount())
+                    .paymentMethod(payment.getPaymentMethod())
+                    .failedAt(LocalDateTime.now())
+                    .reason("Payment provider reported failure") // Example reason
+                    .build());
         }
     }
 
-  private String pollPaymentStatus(String paymentId) {
-    try {
-      PaymentIntent paymentIntent;
-      String status;
+    public RefundResponse initiateRefund(Long paymentId, RefundRequest request) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found"));
 
-      do {
-        paymentIntent = findPaymentIntentById(paymentId);
-        status = paymentIntent.getStatus();
-
-        if (status.equals("succeeded")) {
-          return "success";
-        } else if (status.equals("in_process")){
-        return "in_process";
-        } else if (status.equals("payment_failed")) {
-          return "failed";
+        if (payment.getStatus() != Payment.PaymentStatus.COMPLETED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only completed payments can be refunded.");
+        }
+        if (payment.getAmount().compareTo(request.getAmount()) < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Refund amount exceeds original payment amount.");
         }
 
-        RETRY_COUNT++;
-        if (RETRY_COUNT >= MAX_RETRY_COUNT) {
-          return "undefined_error";
-        }
+        // In a real scenario, this would integrate with the payment gateway to process the refund.
+        // For now, we simulate a successful refund.
+        Refund refund = Refund.builder()
+                .payment(payment)
+                .amount(request.getAmount())
+                .status(Refund.RefundStatus.PENDING)
+                .build();
+        refund = refundRepository.save(refund);
+        log.info("Refund initiated for Payment ID: {}, Refund ID: {}", paymentId, refund.getId());
 
-        Thread.sleep(DELAY_MILLIS);
-      } while (!"succeeded".equals(status) || !"payment_failed".equals(status));
+        // Simulate successful refund
+        refund.setStatus(Refund.RefundStatus.COMPLETED);
+        refundRepository.save(refund);
+        payment.setStatus(Payment.PaymentStatus.REFUNDED); // Mark original payment as refunded
+        paymentRepository.save(payment);
 
-      return "undefined_error";
-    } catch (StripeException | InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-  }
+        paymentEventProducer.sendPaymentRefundedEvent(PaymentRefundedEvent.builder()
+                .refundId(refund.getId())
+                .paymentId(payment.getId())
+                .amount(refund.getAmount())
+                .refundedAt(LocalDateTime.now())
+                .build());
 
-    public Coupon createGiftCard(Double amount, String customerEmail) throws StripeException {
-        Map<String, Object> params = new HashMap<>();
-        params.put("amount_off", (int) (amount * 100));
-        params.put("currency", "PLN");
-        params.put("duration", "forever");
-        Map<String, Object> metaData = new HashMap<>();
-        metaData.put("assigned_to", customerEmail);
-        params.put("meta_data", metaData);
-        Coupon coupon = Coupon.create(params);
-        System.out.println(coupon);
-        return coupon;
+        return mapToRefundResponse(refund);
     }
 
-  public List<PaymentIntent> getUserPaymentsByEmail(String email) throws StripeException {
-    List<PaymentIntent> userPayments = new ArrayList<>();
-    String startingAfter = null;
 
-    do {
-      PaymentIntentListParams params = PaymentIntentListParams.builder()
-        .setLimit(100L)
-        .setStartingAfter(startingAfter)
-        .build();
+    private PaymentResponse mapToPaymentResponse(Payment payment) {
+        return PaymentResponse.builder()
+                .id(payment.getId())
+                .bookingId(payment.getBookingId())
+                .amount(payment.getAmount())
+                .status(payment.getStatus())
+                .paymentMethod(payment.getPaymentMethod())
+                .providerTransactionId(payment.getProviderTransactionId())
+                .createdAt(payment.getCreatedAt())
+                .build();
+    }
 
-      PaymentIntentCollection paymentIntents = PaymentIntent.list(params);
-
-      for (PaymentIntent paymentIntent : paymentIntents.getData()) {
-        String metadataEmail = paymentIntent.getMetadata().get("customer_email");
-        if (metadataEmail != null && metadataEmail.trim().equalsIgnoreCase(email.trim())) {
-          userPayments.add(paymentIntent);
-        }
-      }
-
-      startingAfter = paymentIntents.getData().isEmpty() ? null : paymentIntents.getData().get(paymentIntents.getData().size() - 1).getId();
-    } while (startingAfter != null);
-
-    return userPayments;
-  }
+    private RefundResponse mapToRefundResponse(Refund refund) {
+        return RefundResponse.builder()
+                .id(refund.getId())
+                .paymentId(refund.getPayment().getId())
+                .amount(refund.getAmount())
+                .status(refund.getStatus())
+                .build();
+    }
 }
