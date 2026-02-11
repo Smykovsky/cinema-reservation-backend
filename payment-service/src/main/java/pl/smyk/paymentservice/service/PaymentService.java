@@ -82,7 +82,9 @@ public class PaymentService {
             PaymentIntent paymentIntent = PaymentIntent.create(createParams);
 
             payment.setProviderTransactionId(paymentIntent.getId()); // Store Stripe PaymentIntent ID
-            paymentRepository.save(payment); // Save again with Stripe ID
+            // Map initial Stripe PaymentIntent status to internal Payment status
+            payment.setStatus(Payment.PaymentStatus.PENDING); // Initial status
+            paymentRepository.save(payment); // Save again with Stripe ID and initial status
 
             PaymentResponse response = mapToPaymentResponse(payment);
             response.setClientSecret(paymentIntent.getClientSecret());
@@ -100,46 +102,7 @@ public class PaymentService {
         return mapToPaymentResponse(payment);
     }
 
-    public void handlePaymentCallback(String paymentIntentId, String stripeStatus) { // Changed signature
-        Payment payment = paymentRepository.findByProviderTransactionId(paymentIntentId) // Find by Stripe PI ID
-                .orElseThrow(() -> new PaymentNotFoundException("Payment not found for Stripe PaymentIntent ID: " + paymentIntentId));
 
-        switch (stripeStatus) {
-            case "succeeded":
-                payment.setStatus(Payment.PaymentStatus.COMPLETED);
-                paymentRepository.save(payment);
-                log.info("Payment ID: {} completed successfully via Stripe webhook. Stripe PI ID: {}", payment.getId(), paymentIntentId);
-                paymentEventProducer.sendPaymentCompletedEvent(PaymentCompletedEvent.builder()
-                        .paymentId(payment.getId())
-                        .bookingId(payment.getBookingId())
-                        .amount(payment.getAmount())
-                        .paymentMethod(payment.getPaymentMethod())
-                        .providerTransactionId(paymentIntentId)
-                        .completedAt(LocalDateTime.now())
-                        .build());
-                break;
-            case "payment_failed": // Or other failure statuses
-                payment.setStatus(Payment.PaymentStatus.FAILED);
-                paymentRepository.save(payment);
-                log.warn("Payment ID: {} failed via Stripe webhook. Stripe PI ID: {}", payment.getId(), paymentIntentId);
-                paymentEventProducer.sendPaymentFailedEvent(PaymentFailedEvent.builder()
-                        .paymentId(payment.getId())
-                        .bookingId(payment.getBookingId())
-                        .amount(payment.getAmount())
-                        .paymentMethod(payment.getPaymentMethod())
-                        .failedAt(LocalDateTime.now())
-                        .reason("Stripe PaymentIntent failed")
-                        .build());
-                break;
-            case "requires_action": // Or other intermediate statuses
-                log.info("Payment ID: {} requires action via Stripe webhook. Stripe PI ID: {}", payment.getId(), paymentIntentId);
-                // No change to DB status, maybe just log or send an internal event
-                break;
-            default:
-                log.warn("Unhandled Stripe PaymentIntent status '{}' for Payment ID: {}", stripeStatus, payment.getId());
-                break;
-        }
-    }
 
     public RefundResponse initiateRefund(Long paymentId, RefundRequest request) {
         Payment payment = paymentRepository.findById(paymentId)
@@ -163,26 +126,33 @@ public class PaymentService {
             Refund refund = Refund.builder()
                     .payment(payment)
                     .amount(request.getAmount())
-                    .status(Refund.RefundStatus.PENDING) // Initial status, will be updated by webhook
+                    .providerRefundId(stripeRefund.getId()) // Store Stripe Refund ID
                     .build();
-            refund = refundRepository.save(refund);
-            log.info("Refund initiated for Payment ID: {}, Refund ID: {}, Stripe Refund ID: {}", paymentId, refund.getId(), stripeRefund.getId());
+            // Map Stripe refund status to internal status
+            switch (stripeRefund.getStatus()) {
+                case "succeeded":
+                    refund.setStatus(Refund.RefundStatus.COMPLETED);
+                    payment.setStatus(Payment.PaymentStatus.REFUNDED); // Mark original payment as refunded
+                    paymentRepository.save(payment);
+                    log.info("Refund initiated and completed for Payment ID: {}, Refund ID: {}, Stripe Refund ID: {}", paymentId, refund.getId(), stripeRefund.getId());
 
-            // In a real scenario, the status update (COMPLETED/FAILED) would come from a Stripe webhook for refund.
-            // For now, we'll assume it's immediately successful for the purpose of this call.
-            // However, it's better to process refund status updates via webhooks.
-            refund.setStatus(Refund.RefundStatus.COMPLETED); // Assuming immediate success for this demo
+                    paymentEventProducer.sendPaymentRefundedEvent(PaymentRefundedEvent.builder()
+                            .refundId(refund.getId())
+                            .paymentId(payment.getId())
+                            .amount(refund.getAmount())
+                            .refundedAt(LocalDateTime.now())
+                            .build());
+                    break;
+                case "pending":
+                    refund.setStatus(Refund.RefundStatus.PENDING);
+                    log.info("Refund initiated and is pending for Payment ID: {}, Refund ID: {}, Stripe Refund ID: {}", paymentId, refund.getId(), stripeRefund.getId());
+                    break;
+                case "failed":
+                    refund.setStatus(Refund.RefundStatus.FAILED);
+                    log.warn("Refund initiated and failed for Payment ID: {}, Refund ID: {}, Stripe Refund ID: {}", paymentId, refund.getId(), stripeRefund.getId());
+                    break;
+            }
             refundRepository.save(refund);
-
-            payment.setStatus(Payment.PaymentStatus.REFUNDED); // Mark original payment as refunded
-            paymentRepository.save(payment);
-
-            paymentEventProducer.sendPaymentRefundedEvent(PaymentRefundedEvent.builder()
-                    .refundId(refund.getId())
-                    .paymentId(payment.getId())
-                    .amount(refund.getAmount())
-                    .refundedAt(LocalDateTime.now())
-                    .build());
 
             return mapToRefundResponse(refund);
 
@@ -223,8 +193,47 @@ public class PaymentService {
             // Confirm the PaymentIntent with the BLIK code
             paymentIntent.confirm(params);
 
-            // Poll for payment status (as per example)
+            // Poll for payment status
             String finalStatus = pollPaymentStatus(payment.getProviderTransactionId());
+
+            if ("success".equals(finalStatus)) {
+                payment.setStatus(Payment.PaymentStatus.COMPLETED);
+                log.info("Payment ID: {} completed successfully after BLIK confirmation. Stripe PI ID: {}", payment.getId(), payment.getProviderTransactionId());
+                paymentEventProducer.sendPaymentCompletedEvent(PaymentCompletedEvent.builder()
+                        .paymentId(payment.getId())
+                        .bookingId(payment.getBookingId())
+                        .amount(payment.getAmount())
+                        .paymentMethod(payment.getPaymentMethod())
+                        .providerTransactionId(payment.getProviderTransactionId())
+                        .completedAt(LocalDateTime.now())
+                        .build());
+            } else if ("failed".equals(finalStatus)) {
+                payment.setStatus(Payment.PaymentStatus.FAILED);
+                log.warn("Payment ID: {} failed after BLIK confirmation. Stripe PI ID: {}", payment.getId(), payment.getProviderTransactionId());
+                paymentEventProducer.sendPaymentFailedEvent(PaymentFailedEvent.builder()
+                        .paymentId(payment.getId())
+                        .bookingId(payment.getBookingId())
+                        .amount(payment.getAmount())
+                        .paymentMethod(payment.getPaymentMethod())
+                        .failedAt(LocalDateTime.now())
+                        .reason("BLIK payment confirmation failed")
+                        .build());
+            } else if ("in_process".equals(finalStatus)) {
+                // Payment is still processing, keep status as PENDING or similar
+                log.info("Payment ID: {} is still in process after BLIK confirmation. Stripe PI ID: {}", payment.getId(), payment.getProviderTransactionId());
+            } else { // undefined_error
+                payment.setStatus(Payment.PaymentStatus.FAILED); // Treat as failed if an undefined error occurs
+                log.error("Payment ID: {} encountered an undefined error after BLIK confirmation. Stripe PI ID: {}", payment.getId(), payment.getProviderTransactionId());
+                paymentEventProducer.sendPaymentFailedEvent(PaymentFailedEvent.builder()
+                        .paymentId(payment.getId())
+                        .bookingId(payment.getBookingId())
+                        .amount(payment.getAmount())
+                        .paymentMethod(payment.getPaymentMethod())
+                        .failedAt(LocalDateTime.now())
+                        .reason("BLIK payment confirmation undefined error")
+                        .build());
+            }
+            paymentRepository.save(payment);
 
             return BlikConfirmResponse.builder().status(finalStatus).build();
 

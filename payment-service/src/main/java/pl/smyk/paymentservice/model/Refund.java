@@ -32,6 +32,8 @@ public class Refund {
     @Column(nullable = false)
     private RefundStatus status;
 
+    private String providerRefundId;
+
     public enum RefundStatus {
         PENDING, COMPLETED, FAILED
     }
