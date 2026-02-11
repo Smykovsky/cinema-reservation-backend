@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import pl.smyk.paymentservice.model.Refund;
 
 import java.math.BigDecimal;
-import java.util.UUID;
+
 
 @Data
 @NoArgsConstructor

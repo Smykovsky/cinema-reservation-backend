@@ -5,13 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import pl.smyk.paymentservice.dto.PaymentCompletedEvent;
-import pl.smyk.paymentservice.dto.PaymentFailedEvent;
-import pl.smyk.paymentservice.dto.PaymentInitializationRequest;
-import pl.smyk.paymentservice.dto.PaymentResponse;
-import pl.smyk.paymentservice.dto.PaymentRefundedEvent;
-import pl.smyk.paymentservice.dto.RefundRequest;
-import pl.smyk.paymentservice.dto.RefundResponse;
+import pl.smyk.paymentservice.client.BookingServiceClient;
+import pl.smyk.paymentservice.dto.*;
 import pl.smyk.paymentservice.kafka.PaymentEventProducer;
 import pl.smyk.paymentservice.model.Payment;
 import pl.smyk.paymentservice.model.Refund;
@@ -19,7 +14,7 @@ import pl.smyk.paymentservice.repository.PaymentRepository;
 import pl.smyk.paymentservice.repository.RefundRepository;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
+
 
 @Service
 @RequiredArgsConstructor
@@ -29,12 +24,27 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final RefundRepository refundRepository;
     private final PaymentEventProducer paymentEventProducer;
+    private final BookingServiceClient bookingServiceClient;
 
     public PaymentResponse initializePayment(PaymentInitializationRequest request) {
+        BookingDetailsResponse bookingDetails = bookingServiceClient.getBookingDetails(request.getBookingId());
+
+        if (bookingDetails == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found for ID: " + request.getBookingId());
+        }
+
+        if (!"PENDING".equalsIgnoreCase(bookingDetails.getBookingStatus()) && !"CONFIRMED".equalsIgnoreCase(bookingDetails.getBookingStatus())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Payment can only be initialized for PENDING or CONFIRMED bookings.");
+        }
+
+        if (bookingDetails.getExpiresAt() != null && bookingDetails.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Booking has expired.");
+        }
+
         Payment payment = Payment.builder()
                 .bookingId(request.getBookingId())
-                .amount(request.getAmount())
-                .paymentMethod(request.getPaymentMethod())
+                .amount(bookingDetails.getTotalAmount()) // Use amount from booking details
+                .paymentMethod("CARD") // Hardcode for now as per discussion
                 .status(Payment.PaymentStatus.PENDING)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -42,9 +52,6 @@ public class PaymentService {
         payment = paymentRepository.save(payment);
         log.info("Payment initialized for booking ID: {}, Payment ID: {}", payment.getBookingId(), payment.getId());
 
-        // In a real scenario, this would integrate with a payment gateway (e.g., Stripe, PayPal).
-        // For now, we'll simulate a successful payment.
-        // The webhook will later update the status.
         return mapToPaymentResponse(payment);
     }
 
