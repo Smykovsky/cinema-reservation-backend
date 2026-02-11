@@ -22,4 +22,5 @@ public class PaymentResponse {
     private String paymentMethod;
     private String providerTransactionId;
     private LocalDateTime createdAt;
+    private String clientSecret;
 }

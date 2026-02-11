@@ -3,12 +3,14 @@ package pl.smyk.paymentservice.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+
 import org.springframework.web.bind.annotation.*;
 import pl.smyk.paymentservice.dto.PaymentInitializationRequest;
 import pl.smyk.paymentservice.dto.PaymentResponse;
 import pl.smyk.paymentservice.dto.RefundRequest;
 import pl.smyk.paymentservice.dto.RefundResponse;
+import pl.smyk.paymentservice.dto.BlikConfirmRequest;
+import pl.smyk.paymentservice.dto.BlikConfirmResponse;
 import pl.smyk.paymentservice.service.PaymentService;
 
 @RestController
@@ -18,26 +20,29 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
-    @GetMapping("/test")
-    public String test() {
-        return "test";
-    }
+
 
     @PostMapping("")
-    public ResponseEntity<PaymentResponse> initializePayment(@Valid @RequestBody PaymentInitializationRequest request) {
-        PaymentResponse paymentResponse = paymentService.initializePayment(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(paymentResponse);
+    @ResponseStatus(HttpStatus.CREATED)
+    public PaymentResponse initializePayment(@Valid @RequestBody PaymentInitializationRequest request) {
+        return paymentService.initializePayment(request);
     }
 
     @PostMapping("/{id}/refund")
-    public ResponseEntity<RefundResponse> refundPayment(@PathVariable("id") Long paymentId, @Valid @RequestBody RefundRequest request) {
-        RefundResponse refundResponse = paymentService.initiateRefund(paymentId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(refundResponse);
+    @ResponseStatus(HttpStatus.OK)
+    public RefundResponse refundPayment(@PathVariable("id") Long paymentId, @Valid @RequestBody RefundRequest request) {
+        return paymentService.initiateRefund(paymentId, request);
+    }
+
+    @PostMapping("/{id}/confirm-blik")
+    @ResponseStatus(HttpStatus.OK)
+    public BlikConfirmResponse confirmBlikPayment(@PathVariable("id") Long paymentId, @Valid @RequestBody BlikConfirmRequest request) {
+        return paymentService.confirmBlikPayment(paymentId, request);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PaymentResponse> getPaymentDetails(@PathVariable("id") Long paymentId) {
-        PaymentResponse paymentResponse = paymentService.getPaymentById(paymentId);
-        return ResponseEntity.status(HttpStatus.OK).body(paymentResponse);
+    @ResponseStatus(HttpStatus.OK)
+    public PaymentResponse getPaymentDetails(@PathVariable("id") Long paymentId) {
+        return paymentService.getPaymentById(paymentId);
     }
 }
