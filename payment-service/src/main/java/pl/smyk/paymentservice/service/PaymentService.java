@@ -2,11 +2,15 @@ package pl.smyk.paymentservice.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
+
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+
 import pl.smyk.paymentservice.client.BookingServiceClient;
 import pl.smyk.paymentservice.dto.*;
+import pl.smyk.paymentservice.exception.InvalidBlikCodeException;
+import pl.smyk.paymentservice.exception.PaymentNotFoundException;
+import pl.smyk.paymentservice.exception.PaymentValidationException;
+import pl.smyk.paymentservice.exception.StripeIntegrationException;
 import pl.smyk.paymentservice.kafka.PaymentEventProducer;
 import pl.smyk.paymentservice.model.Payment;
 import pl.smyk.paymentservice.model.Refund;
@@ -42,15 +46,15 @@ public class PaymentService {
         BookingDetailsResponse bookingDetails = bookingServiceClient.getBookingDetails(request.getBookingId());
 
         if (bookingDetails == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found for ID: " + request.getBookingId());
+            throw new PaymentNotFoundException("Booking not found for ID: " + request.getBookingId());
         }
 
         if (!"PENDING".equalsIgnoreCase(bookingDetails.getStatus()) && !"CONFIRMED".equalsIgnoreCase(bookingDetails.getStatus())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Payment can only be initialized for PENDING or CONFIRMED bookings.");
+            throw new PaymentValidationException("Payment can only be initialized for PENDING or CONFIRMED bookings.");
         }
 
         if (bookingDetails.getExpiresAt() != null && bookingDetails.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Booking has expired.");
+            throw new PaymentValidationException("Booking has expired.");
         }
 
         Payment payment = Payment.builder()
@@ -86,19 +90,19 @@ public class PaymentService {
 
         } catch (StripeException e) {
             log.error("Error creating PaymentIntent for booking ID {}: {}", payment.getBookingId(), e.getMessage());
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error creating payment intent with Stripe.");
+            throw new StripeIntegrationException("Error creating payment intent with Stripe.", e);
         }
     }
 
     public PaymentResponse getPaymentById(Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found"));
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
         return mapToPaymentResponse(payment);
     }
 
     public void handlePaymentCallback(String paymentIntentId, String stripeStatus) { // Changed signature
         Payment payment = paymentRepository.findByProviderTransactionId(paymentIntentId) // Find by Stripe PI ID
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found for Stripe PaymentIntent ID: " + paymentIntentId));
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found for Stripe PaymentIntent ID: " + paymentIntentId));
 
         switch (stripeStatus) {
             case "succeeded":
@@ -139,13 +143,13 @@ public class PaymentService {
 
     public RefundResponse initiateRefund(Long paymentId, RefundRequest request) {
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found"));
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
 
         if (payment.getStatus() != Payment.PaymentStatus.COMPLETED) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only completed payments can be refunded.");
+            throw new PaymentValidationException("Only completed payments can be refunded.");
         }
         if (payment.getAmount().compareTo(request.getAmount()) < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Refund amount exceeds original payment amount.");
+            throw new PaymentValidationException("Refund amount exceeds original payment amount.");
         }
 
         try {
@@ -184,7 +188,7 @@ public class PaymentService {
 
         } catch (StripeException e) {
             log.error("Error creating Stripe Refund for Payment ID {}: {}", paymentId, e.getMessage());
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error creating refund with Stripe.");
+            throw new StripeIntegrationException("Error creating refund with Stripe.", e);
         }
     }
 
@@ -192,13 +196,18 @@ public class PaymentService {
     public BlikConfirmResponse confirmBlikPayment(Long paymentId, BlikConfirmRequest blikConfirmRequest) {
         try {
             Payment payment = paymentRepository.findById(paymentId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found"));
+                    .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
 
             if (!"BLIK".equals(payment.getPaymentMethod())) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Payment is not a BLIK payment.");
+                throw new PaymentValidationException("Payment is not a BLIK payment.");
             }
             if (payment.getStatus() != Payment.PaymentStatus.PENDING) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Payment is not in PENDING status.");
+                throw new PaymentValidationException("Payment is not in PENDING status.");
+            }
+
+            // Validate BLIK code format
+            if (!blikConfirmRequest.getBlikCode().matches("\\d{6}")) {
+                throw new InvalidBlikCodeException("Invalid BLIK code format. Must be 6 digits.");
             }
 
             // Retrieve Stripe PaymentIntent using providerTransactionId
@@ -221,7 +230,7 @@ public class PaymentService {
 
         } catch (StripeException e) {
             log.error("Error confirming BLIK payment for Payment ID {}: {}", paymentId, e.getMessage());
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error confirming BLIK payment with Stripe.");
+            throw new StripeIntegrationException("Error confirming BLIK payment with Stripe.", e);
         }
     }
 
