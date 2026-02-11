@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 public class BookingDetailsResponse {
     private Long id;
     private BigDecimal totalAmount;
-    private String bookingStatus; // e.g., PENDING, CONFIRMED, CANCELLED, EXPIRED
+    private String status; // e.g., PENDING, CONFIRMED, CANCELLED, EXPIRED
     private LocalDateTime expiresAt;
     // Add any other fields from booking-service that might be relevant for payment validation
 }

@@ -28,12 +28,13 @@ public class PaymentService {
 
     public PaymentResponse initializePayment(PaymentInitializationRequest request) {
         BookingDetailsResponse bookingDetails = bookingServiceClient.getBookingDetails(request.getBookingId());
+        System.out.println(bookingDetails);
 
         if (bookingDetails == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found for ID: " + request.getBookingId());
         }
 
-        if (!"PENDING".equalsIgnoreCase(bookingDetails.getBookingStatus()) && !"CONFIRMED".equalsIgnoreCase(bookingDetails.getBookingStatus())) {
+        if (!"PENDING".equalsIgnoreCase(bookingDetails.getStatus()) && !"CONFIRMED".equalsIgnoreCase(bookingDetails.getStatus())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Payment can only be initialized for PENDING or CONFIRMED bookings.");
         }
 
