@@ -18,11 +18,6 @@ public class BookingEventProducer {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
-//    public void sendBookingCreatedEvent(BookingDetailsResponse booking) {
-//        log.info("Producing booking created event for booking ID: {}", booking.getId());
-//        kafkaTemplate.send(TOPIC_BOOKING_CREATED, booking.getId().toString(), booking);
-//    }
-
     public void sendBookingCreatedEvent(BookingEventDto booking) {
         log.info("Producing booking created event for booking ID: {}", booking.getBookingId());
         kafkaTemplate.send(TOPIC_BOOKING_CREATED, booking.getBookingId().toString(), booking);

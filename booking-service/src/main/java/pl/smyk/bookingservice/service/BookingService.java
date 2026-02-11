@@ -139,7 +139,6 @@ public class BookingService {
                 .expiresAt(booking.getExpiresAt().toInstant(ZoneOffset.UTC))
                 .build();
 
-        // In a real scenario, implement logic to release seats, notify other services, etc.
         booking.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
         bookingEventProducer.sendBookingCancelledEvent(eventDto); // Send event with DTO
@@ -163,7 +162,7 @@ public class BookingService {
 
             booking.setStatus(BookingStatus.CONFIRMED);
             bookingRepository.save(booking);
-            bookingEventProducer.sendBookingConfirmedEvent(eventDto); // Send event with DTO
+            bookingEventProducer.sendBookingConfirmedEvent(eventDto);
         } else {
             // Handle case where booking cannot be confirmed (e.g., already cancelled or expired)
             throw new InvalidBookingRequestException("Booking " + bookingId + " cannot be confirmed from its current status: " + booking.getStatus());
