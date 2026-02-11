@@ -3,11 +3,7 @@ package pl.smyk.cinemaservice.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pl.smyk.cinemaservice.dto.CreateScreeningRequest;
-import pl.smyk.cinemaservice.dto.ReserveSeatsRequest;
-import pl.smyk.cinemaservice.dto.ScreeningDto;
-import pl.smyk.cinemaservice.dto.ScreeningSeatDto;
-import pl.smyk.cinemaservice.dto.UpdateScreeningRequest;
+import pl.smyk.cinemaservice.dto.*;
 import pl.smyk.cinemaservice.exception.HallHasNoSeatsException;
 import pl.smyk.cinemaservice.exception.HallNotFoundException;
 import pl.smyk.cinemaservice.exception.ScreeningAlreadyExistsException;
@@ -135,4 +131,93 @@ public class ScreeningService {
                 .map(screeningSeatMapper::toDto)
                 .toList();
     }
-}
+
+        @Transactional
+
+        public void confirmSeats(Long screeningId, ChangeSeatStatusRequest request) {
+
+            Screening screening = screeningRepository.findById(screeningId)
+
+                    .orElseThrow(() -> new ScreeningNotFoundException("Screening with id " + screeningId + " not found"));
+
+    
+
+            Set<Long> requestedSeatIds = request.getSeatIds().stream().collect(Collectors.toSet());
+
+    
+
+            List<ScreeningSeat> seatsToConfirm = screeningSeatRepository.findByScreeningAndSeatIdIn(screening, requestedSeatIds);
+
+    
+
+            if (seatsToConfirm.size() != requestedSeatIds.size()) {
+
+                throw new SeatNotAvailableException("One or more requested seats not found for screening " + screeningId);
+
+            }
+
+    
+
+            for (ScreeningSeat screeningSeat : seatsToConfirm) {
+
+                if (screeningSeat.getStatus() != SeatStatus.RESERVED) {
+
+                    throw new SeatNotAvailableException("Seat " + screeningSeat.getSeat().getId() + " is not in RESERVED state and cannot be confirmed.");
+
+                }
+
+                screeningSeat.setStatus(SeatStatus.SOLD);
+
+            }
+
+            screeningSeatRepository.saveAll(seatsToConfirm);
+
+        }
+
+    
+
+        @Transactional
+
+        public void releaseSeats(Long screeningId, ChangeSeatStatusRequest request) {
+
+            Screening screening = screeningRepository.findById(screeningId)
+
+                    .orElseThrow(() -> new ScreeningNotFoundException("Screening with id " + screeningId + " not found"));
+
+    
+
+            Set<Long> requestedSeatIds = request.getSeatIds().stream().collect(Collectors.toSet());
+
+    
+
+            List<ScreeningSeat> seatsToRelease = screeningSeatRepository.findByScreeningAndSeatIdIn(screening, requestedSeatIds);
+
+    
+
+            if (seatsToRelease.size() != requestedSeatIds.size()) {
+
+                throw new SeatNotAvailableException("One or more requested seats not found for screening " + screeningId);
+
+            }
+
+    
+
+            for (ScreeningSeat screeningSeat : seatsToRelease) {
+
+                if (screeningSeat.getStatus() != SeatStatus.RESERVED && screeningSeat.getStatus() != SeatStatus.SOLD) {
+
+                    throw new SeatNotAvailableException("Seat " + screeningSeat.getSeat().getId() + " is not in RESERVED or SOLD state and cannot be released.");
+
+                }
+
+                screeningSeat.setStatus(SeatStatus.AVAILABLE);
+
+            }
+
+            screeningSeatRepository.saveAll(seatsToRelease);
+
+        }
+
+    }
+
+    

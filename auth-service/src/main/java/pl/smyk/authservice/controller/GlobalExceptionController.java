@@ -5,8 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
-import pl.smyk.authservice.dto.ErrorResponse;
 import pl.smyk.authservice.exception.*;
+import pl.smyk.common.dto.ErrorResponse;
 
 @RestControllerAdvice
 public class GlobalExceptionController {

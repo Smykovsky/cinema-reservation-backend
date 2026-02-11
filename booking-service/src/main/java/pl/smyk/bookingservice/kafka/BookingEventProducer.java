@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-import pl.smyk.bookingservice.dto.BookingDetailsResponse;
+import pl.smyk.common.dto.BookingEventDto;
 
 @Service
 @RequiredArgsConstructor
@@ -18,23 +18,28 @@ public class BookingEventProducer {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    public void sendBookingCreatedEvent(BookingDetailsResponse booking) {
-        log.info("Producing booking created event for booking ID: {}", booking.getId());
-        kafkaTemplate.send(TOPIC_BOOKING_CREATED, booking.getId().toString(), booking);
+//    public void sendBookingCreatedEvent(BookingDetailsResponse booking) {
+//        log.info("Producing booking created event for booking ID: {}", booking.getId());
+//        kafkaTemplate.send(TOPIC_BOOKING_CREATED, booking.getId().toString(), booking);
+//    }
+
+    public void sendBookingCreatedEvent(BookingEventDto booking) {
+        log.info("Producing booking created event for booking ID: {}", booking.getBookingId());
+        kafkaTemplate.send(TOPIC_BOOKING_CREATED, booking.getBookingId().toString(), booking);
     }
 
-    public void sendBookingConfirmedEvent(Long bookingId) {
-        log.info("Producing booking confirmed event for booking ID: {}", bookingId);
-        kafkaTemplate.send(TOPIC_BOOKING_CONFIRMED, bookingId.toString(), bookingId);
+    public void sendBookingConfirmedEvent(BookingEventDto eventDto) {
+        log.info("Producing booking confirmed event for booking ID: {}", eventDto.getBookingId());
+        kafkaTemplate.send(TOPIC_BOOKING_CONFIRMED, eventDto.getBookingId().toString(), eventDto);
     }
 
-    public void sendBookingCancelledEvent(Long bookingId) {
-        log.info("Producing booking cancelled event for booking ID: {}", bookingId);
-        kafkaTemplate.send(TOPIC_BOOKING_CANCELLED, bookingId.toString(), bookingId);
+    public void sendBookingCancelledEvent(BookingEventDto eventDto) {
+        log.info("Producing booking cancelled event for booking ID: {}", eventDto.getBookingId());
+        kafkaTemplate.send(TOPIC_BOOKING_CANCELLED, eventDto.getBookingId().toString(), eventDto);
     }
 
-    public void sendBookingExpiredEvent(Long bookingId) {
-        log.info("Producing booking expired event for booking ID: {}", bookingId);
-        kafkaTemplate.send(TOPIC_BOOKING_EXPIRED, bookingId.toString(), bookingId);
+    public void sendBookingExpiredEvent(BookingEventDto eventDto) {
+        log.info("Producing booking expired event for booking ID: {}", eventDto.getBookingId());
+        kafkaTemplate.send(TOPIC_BOOKING_EXPIRED, eventDto.getBookingId().toString(), eventDto);
     }
 }

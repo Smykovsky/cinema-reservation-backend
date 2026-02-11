@@ -12,7 +12,7 @@ import java.time.Instant;
 public class ScreeningDto {
     Long id;
     Long movieId;
-    Long hallId; // Just the ID for now
+    Long hallId;
     Instant startTime;
     Instant endTime;
     BigDecimal basePrice;

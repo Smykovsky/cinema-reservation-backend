@@ -17,5 +17,4 @@ public class PaymentInitializationRequest {
     private BigDecimal amount;
     private String currency;
     private String description;
-    // Potentially other payment-related details like return URLs, customer info, etc.
 }

@@ -50,7 +50,7 @@ public class ScreeningController {
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/{id}/seats/reserve") // Changed to PutMapping
+    @PutMapping("/{id}/seats/reserve")
     public ResponseEntity<Void> reserveSeats(@PathVariable("id") Long id, @Valid @RequestBody ReserveSeatsRequest request) {
         screeningService.reserveSeats(id, request);
         return ResponseEntity.noContent().build();

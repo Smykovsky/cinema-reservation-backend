@@ -6,92 +6,63 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import pl.smyk.cinemaservice.exception.*;
 
-import pl.smyk.cinemaservice.dto.ErrorResponse;
-
 import pl.smyk.cinemaservice.exception.HallHasNoSeatsException; // Nowy import
-
-import java.time.LocalDateTime;
-
+import pl.smyk.common.dto.ErrorResponse;
 
 
 @ControllerAdvice
-
 public class GlobalExceptionHandler {
-
-
-
     @ExceptionHandler(CinemaNotFoundException.class)
-
     public ResponseEntity<ErrorResponse> handleCinemaNotFoundException(CinemaNotFoundException ex) {
-
-        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
-
+        ErrorResponse error = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
-
-
 
     @ExceptionHandler(CinemaAlreadyExistsException.class)
-
     public ResponseEntity<ErrorResponse> handleCinemaAlreadyExistsException(CinemaAlreadyExistsException ex) {
-
-        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
-
+        ErrorResponse error = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
-
-
 
     @ExceptionHandler(HallNotFoundException.class)
-
     public ResponseEntity<ErrorResponse> handleHallNotFoundException(HallNotFoundException ex) {
-
-        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
-
+        ErrorResponse error = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
-
-
 
     @ExceptionHandler(HallAlreadyExistsException.class)
-
     public ResponseEntity<ErrorResponse> handleHallAlreadyExistsException(HallAlreadyExistsException ex) {
-
-        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
-
+        ErrorResponse error = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
-
-
 
     @ExceptionHandler(HallHasNoSeatsException.class)
-
     public ResponseEntity<ErrorResponse> handleHallHasNoSeatsException(HallHasNoSeatsException ex) {
-
-        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
-
+        ErrorResponse error = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
-
-
 
     @ExceptionHandler(ScreeningNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleScreeningNotFoundException(ScreeningNotFoundException ex) {
-        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+        ErrorResponse error = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
     @ExceptionHandler(ScreeningAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleScreeningAlreadyExistsException(ScreeningAlreadyExistsException ex) {
-        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
+        ErrorResponse error = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
     @ExceptionHandler(SeatNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleSeatNotFoundException(SeatNotFoundException ex) {
-        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+        ErrorResponse error = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
     @ExceptionHandler(SeatAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleSeatAlreadyExistsException(SeatAlreadyExistsException ex) {
-        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
-    }
-
-    private ResponseEntity<ErrorResponse> buildErrorResponse(HttpStatus status, String message) {
-        ErrorResponse errorResponse = new ErrorResponse(message, LocalDateTime.now());
-        return new ResponseEntity<>(errorResponse, status);
+        ErrorResponse error = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 }

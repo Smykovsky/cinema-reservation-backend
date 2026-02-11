@@ -1,12 +1,10 @@
 package pl.smyk.bookingservice.service;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pl.smyk.bookingservice.client.CinemaServiceFeignClient;
-import pl.smyk.bookingservice.dto.BookingDetailsResponse;
-import pl.smyk.bookingservice.dto.CreateBookingRequest;
-import pl.smyk.bookingservice.dto.ReserveSeatsRequest;
-import pl.smyk.bookingservice.dto.ScreeningResponse;
+import pl.smyk.bookingservice.dto.*;
 import pl.smyk.bookingservice.exception.BookingNotFoundException;
 import pl.smyk.bookingservice.exception.InvalidBookingRequestException;
 import pl.smyk.bookingservice.kafka.BookingEventProducer;
@@ -15,9 +13,12 @@ import pl.smyk.bookingservice.model.BookingSeat;
 import pl.smyk.bookingservice.model.BookingStatus;
 import pl.smyk.bookingservice.repository.BookingRepository;
 import pl.smyk.bookingservice.repository.BookingSeatRepository;
+import pl.smyk.common.dto.BookingEventDto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset; // New import for Instant conversion
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -43,31 +44,37 @@ public class BookingService {
                 .collect(Collectors.joining());
     }
 
+    @Transactional
     public BookingDetailsResponse createBooking(CreateBookingRequest request) {
+
         if (request.getSeatIds() == null || request.getSeatIds().isEmpty()) {
             throw new InvalidBookingRequestException("Booking request must contain at least one seat.");
         }
 
-        // 1. Get screening details from Cinema Service
+        // 1. Pobranie seansu
         ScreeningResponse screening = cinemaServiceFeignClient.getScreeningById(request.getScreeningId());
         if (screening == null) {
-            throw new InvalidBookingRequestException("Screening with ID " + request.getScreeningId() + " not found.");
+            throw new InvalidBookingRequestException(
+                    "Screening with ID " + request.getScreeningId() + " not found.");
         }
 
-        // 2. Reserve seats in Cinema Service
+        // 2. Rezerwacja miejsc w cinema-service
         ReserveSeatsRequest reserveSeatsRequest = ReserveSeatsRequest.builder()
                 .screeningId(request.getScreeningId())
                 .seatIds(request.getSeatIds())
                 .build();
+
         cinemaServiceFeignClient.reserveSeats(request.getScreeningId(), reserveSeatsRequest);
 
+        // 3. Generowanie numeru rezerwacji
         String bookingNumber;
         do {
             bookingNumber = generateBookingNumber();
         } while (bookingRepository.findByBookingNumber(bookingNumber).isPresent());
 
-        // Calculate total amount (assuming all seats have the base price for simplicity, adjust as needed)
-        BigDecimal totalAmount = screening.getBasePrice().multiply(BigDecimal.valueOf(request.getSeatIds().size()));
+        BigDecimal totalAmount = screening.getBasePrice()
+                .multiply(BigDecimal.valueOf(request.getSeatIds().size()));
+
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime expiresAt = now.plusMinutes(BOOKING_EXPIRATION_MINUTES);
 
@@ -87,20 +94,26 @@ public class BookingService {
                 .map(seatId -> BookingSeat.builder()
                         .booking(savedBooking)
                         .seatId(seatId)
-                        .price(screening.getBasePrice()) // Assign seat price from screening
+                        .price(screening.getBasePrice())
                         .build())
-                .collect(Collectors.toList());
+                .toList();
 
         bookingSeatRepository.saveAll(bookingSeats);
 
-        // 3. Initialize payment in Payment Service
-        // Here, you might want to store paymentResponse details in the booking or a separate entity
-        // For now, we proceed to build the response and publish the event
+        // ✅ 4. Tworzymy DTO eventowe (nie HTTP response)
+        BookingEventDto eventDto = BookingEventDto.builder()
+                .bookingId(savedBooking.getId())
+                .screeningId(savedBooking.getScreeningId())
+                .seatIds(request.getSeatIds())
+                .expiresAt(savedBooking.getExpiresAt()
+                        .atZone(ZoneId.systemDefault())
+                        .toInstant())
+                .build();
 
-        BookingDetailsResponse response = buildBookingDetailsResponse(savedBooking, bookingSeats);
-        // 4. Publish booking.created Kafka event
-        bookingEventProducer.sendBookingCreatedEvent(response);
-        return response;
+        bookingEventProducer.sendBookingCreatedEvent(eventDto);
+
+        // 5. Zwracamy normalny response REST
+        return buildBookingDetailsResponse(savedBooking, bookingSeats);
     }
 
     public BookingDetailsResponse getBookingDetails(Long bookingId) {
@@ -115,10 +128,21 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new BookingNotFoundException("Booking with ID " + bookingId + " not found."));
 
+        List<Long> seatIds = bookingSeatRepository.findByBooking(booking).stream()
+                .map(BookingSeat::getSeatId)
+                .collect(Collectors.toList());
+
+        BookingEventDto eventDto = BookingEventDto.builder()
+                .bookingId(booking.getId())
+                .screeningId(booking.getScreeningId())
+                .seatIds(seatIds)
+                .expiresAt(booking.getExpiresAt().toInstant(ZoneOffset.UTC))
+                .build();
+
         // In a real scenario, implement logic to release seats, notify other services, etc.
         booking.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
-        bookingEventProducer.sendBookingCancelledEvent(bookingId); // Send event
+        bookingEventProducer.sendBookingCancelledEvent(eventDto); // Send event with DTO
     }
 
     public void confirmBooking(Long bookingId) {
@@ -126,9 +150,20 @@ public class BookingService {
                 .orElseThrow(() -> new BookingNotFoundException("Booking with ID " + bookingId + " not found."));
 
         if (booking.getStatus() == BookingStatus.PENDING) {
+            List<Long> seatIds = bookingSeatRepository.findByBooking(booking).stream()
+                    .map(BookingSeat::getSeatId)
+                    .collect(Collectors.toList());
+
+            BookingEventDto eventDto = BookingEventDto.builder()
+                    .bookingId(booking.getId())
+                    .screeningId(booking.getScreeningId())
+                    .seatIds(seatIds)
+                    .expiresAt(booking.getExpiresAt().toInstant(ZoneOffset.UTC))
+                    .build();
+
             booking.setStatus(BookingStatus.CONFIRMED);
             bookingRepository.save(booking);
-            bookingEventProducer.sendBookingConfirmedEvent(bookingId);
+            bookingEventProducer.sendBookingConfirmedEvent(eventDto); // Send event with DTO
         } else {
             // Handle case where booking cannot be confirmed (e.g., already cancelled or expired)
             throw new InvalidBookingRequestException("Booking " + bookingId + " cannot be confirmed from its current status: " + booking.getStatus());
@@ -140,9 +175,20 @@ public class BookingService {
                 .orElseThrow(() -> new BookingNotFoundException("Booking with ID " + bookingId + " not found."));
 
         if (booking.getStatus() == BookingStatus.PENDING) {
+            List<Long> seatIds = bookingSeatRepository.findByBooking(booking).stream()
+                    .map(BookingSeat::getSeatId)
+                    .collect(Collectors.toList());
+
+            BookingEventDto eventDto = BookingEventDto.builder()
+                    .bookingId(booking.getId())
+                    .screeningId(booking.getScreeningId())
+                    .seatIds(seatIds)
+                    .expiresAt(booking.getExpiresAt().toInstant(ZoneOffset.UTC))
+                    .build();
+
             booking.setStatus(BookingStatus.EXPIRED);
             bookingRepository.save(booking);
-            bookingEventProducer.sendBookingExpiredEvent(bookingId);
+            bookingEventProducer.sendBookingExpiredEvent(eventDto);
             // In a real scenario, you might also want to release seats here
         } else {
             // Handle case where booking cannot be expired (e.g., already confirmed or cancelled)

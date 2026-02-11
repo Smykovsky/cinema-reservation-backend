@@ -27,6 +27,8 @@ kafka:
   consumer:
     group-id: booking-service-group
     auto-offset-reset: earliest
+    properties:
+      spring.json.trusted.packages: "*"
   producer:
     key-serializer: org.apache.kafka.common.serialization.StringSerializer
     value-serializer: org.springframework.kafka.support.serializer.JsonSerializer

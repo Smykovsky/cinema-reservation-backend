@@ -10,6 +10,7 @@
         <module name="config-server" />
         <module name="auth-service" />
         <module name="payment-service" />
+        <module name="common" />
         <module name="cinema-service" />
         <module name="booking-service" />
         <module name="api-gateway" />
