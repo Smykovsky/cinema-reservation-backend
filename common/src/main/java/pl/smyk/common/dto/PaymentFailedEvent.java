@@ -13,10 +13,12 @@ import java.time.Instant;
 @AllArgsConstructor
 @Builder
 public class PaymentFailedEvent {
+    private Long paymentId;
     private Long bookingId;
     private String bookingNumber;
     private BigDecimal amount;
     private String currency;
     private String reason;
     private Instant timestamp;
+    private UserDto userData;
 }

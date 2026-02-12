@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import pl.smyk.common.dto.PaymentCompletedEvent;
 import pl.smyk.common.dto.PaymentFailedEvent;
 import pl.smyk.common.dto.PaymentRefundedEvent;
+import pl.smyk.common.dto.UserDto;
+import pl.smyk.paymentservice.client.AuthServiceClient;
 import pl.smyk.paymentservice.client.BookingServiceClient;
 import pl.smyk.paymentservice.dto.*;
 import pl.smyk.paymentservice.exception.InvalidBlikCodeException;
@@ -41,6 +43,7 @@ public class PaymentService {
     private final RefundRepository refundRepository;
     private final PaymentEventProducer paymentEventProducer;
     private final BookingServiceClient bookingServiceClient;
+    private final AuthServiceClient authServiceClient;
 
     private final int MAX_RETRY_COUNT = 12;
     private final int DELAY_MILLIS = 2000;
@@ -60,8 +63,14 @@ public class PaymentService {
             throw new PaymentValidationException("Booking has expired.");
         }
 
+        UserDto userDto = authServiceClient.getUser();
+        if (userDto == null) {
+            throw new PaymentNotFoundException("User not found.");
+        }
+
         Payment payment = Payment.builder()
                 .bookingId(request.getBookingId())
+                .userId(userDto.getId())
                 .bookingNumber(bookingDetails.getBookingNumber())
                 .amount(bookingDetails.getTotalAmount())
                 .currency("PLN") // Hardcode for now, or get from bookingDetails if available
@@ -76,20 +85,20 @@ public class PaymentService {
         try {
             Map<String, Object> metadata = new HashMap<>();
             metadata.put("booking_id", payment.getBookingId().toString());
-            metadata.put("payment_id", payment.getId().toString()); // Store internal payment ID
+            metadata.put("payment_id", payment.getId().toString());
+            metadata.put("user_id", payment.getUserId().toString());
 
             PaymentIntentCreateParams createParams = PaymentIntentCreateParams.builder()
-                    .setAmount(payment.getAmount().multiply(new BigDecimal("100")).longValue()) // Amount in cents
+                    .setAmount(payment.getAmount().multiply(new BigDecimal("100")).longValue())
                     .setCurrency("pln")
                     .addPaymentMethodType("blik")
                     .build();
 
             PaymentIntent paymentIntent = PaymentIntent.create(createParams);
 
-            payment.setProviderTransactionId(paymentIntent.getId()); // Store Stripe PaymentIntent ID
-            // Map initial Stripe PaymentIntent status to internal Payment status
-            payment.setStatus(Payment.PaymentStatus.PENDING); // Initial status
-            paymentRepository.save(payment); // Save again with Stripe ID and initial status
+            payment.setProviderTransactionId(paymentIntent.getId());
+            payment.setStatus(Payment.PaymentStatus.PENDING);
+            paymentRepository.save(payment);
 
             PaymentResponse response = mapToPaymentResponse(payment);
             response.setClientSecret(paymentIntent.getClientSecret());
@@ -120,28 +129,34 @@ public class PaymentService {
             throw new PaymentValidationException("Refund amount exceeds original payment amount.");
         }
 
+        UserDto userDto = authServiceClient.getUser();
+        if (userDto == null) {
+            throw new PaymentNotFoundException("User not found.");
+        }
+
         try {
-            // Create Stripe Refund
             Map<String, Object> params = new HashMap<>();
             params.put("payment_intent", payment.getProviderTransactionId());
             params.put("amount", request.getAmount().multiply(new BigDecimal("100")).longValue()); // Amount in cents
+            params.put("user_id", payment.getUserId().toString());
 
             com.stripe.model.Refund stripeRefund = com.stripe.model.Refund.create(params);
 
             Refund refund = Refund.builder()
                     .payment(payment)
+                    .userId(payment.getUserId())
                     .amount(request.getAmount())
-                    .providerRefundId(stripeRefund.getId()) // Store Stripe Refund ID
+                    .providerRefundId(stripeRefund.getId())
                     .build();
-            // Map Stripe refund status to internal status
             switch (stripeRefund.getStatus()) {
                 case "succeeded":
                     refund.setStatus(Refund.RefundStatus.COMPLETED);
-                    payment.setStatus(Payment.PaymentStatus.REFUNDED); // Mark original payment as refunded
+                    payment.setStatus(Payment.PaymentStatus.REFUNDED);
                     paymentRepository.save(payment);
                     log.info("Refund initiated and completed for Payment ID: {}, Refund ID: {}, Stripe Refund ID: {}", paymentId, refund.getId(), stripeRefund.getId());
 
                     paymentEventProducer.sendPaymentRefundedEvent(PaymentRefundedEvent.builder()
+                            .paymentId(payment.getId())
                             .bookingId(payment.getBookingId())
                             .bookingNumber(payment.getBookingNumber())
                             .amount(refund.getAmount())
@@ -149,6 +164,7 @@ public class PaymentService {
                             .refundId(refund.getProviderRefundId())
                             .reason(request.getReason() != null ? request.getReason() : "User requested refund")
                             .timestamp(java.time.Instant.now())
+                            .userData(userDto)
                             .build());
                     break;
                 case "pending":
@@ -179,6 +195,11 @@ public class PaymentService {
         try {
             Payment payment = paymentRepository.findById(paymentId)
                     .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
+
+            UserDto userDto = authServiceClient.getUser();
+            if (userDto == null) {
+                throw new PaymentNotFoundException("User not found.");
+            }
 
             if (!"BLIK".equals(payment.getPaymentMethod())) {
                 throw new PaymentValidationException("Payment is not a BLIK payment.");
@@ -217,18 +238,21 @@ public class PaymentService {
                         .paymentMethod(payment.getPaymentMethod())
                         .providerTransactionId(payment.getProviderTransactionId())
                         .completedAt(LocalDateTime.now())
+                        .userData(userDto)
                         .build();
                 paymentEventProducer.sendPaymentCompletedEvent(build);
             } else if ("failed".equals(finalStatus)) {
                 payment.setStatus(Payment.PaymentStatus.FAILED);
                 log.warn("Payment ID: {} failed after BLIK confirmation. Stripe PI ID: {}", payment.getId(), payment.getProviderTransactionId());
                 paymentEventProducer.sendPaymentFailedEvent(PaymentFailedEvent.builder()
+                        .paymentId(payment.getId())
                         .bookingId(payment.getBookingId())
                         .bookingNumber(payment.getBookingNumber())
                         .amount(payment.getAmount())
                         .currency(payment.getCurrency())
                         .reason("BLIK payment confirmation failed")
                         .timestamp(java.time.Instant.now())
+                        .userData(userDto)
                         .build());
             } else if ("in_process".equals(finalStatus)) {
                 log.info("Payment ID: {} is still in process after BLIK confirmation. Stripe PI ID: {}", payment.getId(), payment.getProviderTransactionId());
@@ -236,6 +260,7 @@ public class PaymentService {
                 payment.setStatus(Payment.PaymentStatus.FAILED);
                 log.error("Payment ID: {} encountered an undefined error after BLIK confirmation. Stripe PI ID: {}", payment.getId(), payment.getProviderTransactionId());
                 paymentEventProducer.sendPaymentFailedEvent(PaymentFailedEvent.builder()
+                        .paymentId(payment.getId())
                         .bookingId(payment.getBookingId())
                         .bookingNumber(payment.getBookingNumber())
                         .amount(payment.getAmount())

@@ -10,6 +10,7 @@ import pl.smyk.authservice.model.User;
 import pl.smyk.authservice.service.AuthService;
 import pl.smyk.authservice.service.TotpService;
 import pl.smyk.authservice.service.UserService;
+import pl.smyk.common.dto.UserDto;
 
 @RestController
 @RequestMapping("/api/auth")

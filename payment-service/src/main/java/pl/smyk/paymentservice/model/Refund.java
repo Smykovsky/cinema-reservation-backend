@@ -25,6 +25,9 @@ public class Refund {
     @JoinColumn(name = "payment_id", nullable = false)
     private Payment payment;
 
+    @Column(nullable = false)
+    private Long userId;
+
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 

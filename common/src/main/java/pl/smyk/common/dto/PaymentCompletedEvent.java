@@ -19,4 +19,5 @@ public class PaymentCompletedEvent {
     private String paymentMethod;
     private String providerTransactionId;
     private LocalDateTime completedAt;
+    private UserDto userData;
 }

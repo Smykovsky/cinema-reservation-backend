@@ -3,12 +3,12 @@ package pl.smyk.authservice.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import pl.smyk.authservice.dto.UserDto;
 import pl.smyk.authservice.dto.UserUpdateRequest;
 import pl.smyk.authservice.exception.UserNotFoundException;
 import pl.smyk.authservice.mapper.UserMapper;
 import pl.smyk.authservice.model.User;
 import pl.smyk.authservice.repository.UserRepository;
+import pl.smyk.common.dto.UserDto;
 
 import java.util.Optional;
 

@@ -3,8 +3,8 @@ package pl.smyk.authservice.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
-import pl.smyk.authservice.dto.UserDto;
 import pl.smyk.authservice.model.User;
+import pl.smyk.common.dto.UserDto;
 
 @Mapper
 public interface UserMapper {

@@ -22,7 +22,10 @@ public class Payment {
     private Long id;
 
     @Column(nullable = false)
-    private Long bookingId; // Reference to Booking Service
+    private Long bookingId;
+
+    @Column(nullable = false)
+    private Long userId;
 
     @Column(nullable = false)
     private String bookingNumber;

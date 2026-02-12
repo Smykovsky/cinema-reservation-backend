@@ -13,6 +13,7 @@ import java.time.Instant;
 @AllArgsConstructor
 @Builder
 public class PaymentRefundedEvent {
+    private Long paymentId;
     private Long bookingId;
     private String bookingNumber;
     private BigDecimal amount;
@@ -20,4 +21,5 @@ public class PaymentRefundedEvent {
     private String refundId;
     private String reason;
     private Instant timestamp;
+    private UserDto userData;
 }
