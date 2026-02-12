@@ -1,4 +1,4 @@
-package pl.smyk.paymentservice.dto;
+package pl.smyk.common.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

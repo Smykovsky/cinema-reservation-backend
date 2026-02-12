@@ -5,6 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 
+import pl.smyk.common.dto.PaymentCompletedEvent;
+import pl.smyk.common.dto.PaymentFailedEvent;
+import pl.smyk.common.dto.PaymentRefundedEvent;
 import pl.smyk.paymentservice.client.BookingServiceClient;
 import pl.smyk.paymentservice.dto.*;
 import pl.smyk.paymentservice.exception.InvalidBlikCodeException;

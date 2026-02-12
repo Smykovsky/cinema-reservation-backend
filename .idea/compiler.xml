@@ -16,6 +16,7 @@
         <module name="api-gateway" />
         <module name="movie-service" />
         <module name="eureka-server" />
+        <module name="notification-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -32,6 +33,7 @@
       <module name="customer-service" options="-parameters" />
       <module name="eureka-server" options="-parameters" />
       <module name="movie-service" options="-parameters" />
+      <module name="notification-service" options="-parameters" />
       <module name="payment-service" options="-parameters" />
     </option>
   </component>
