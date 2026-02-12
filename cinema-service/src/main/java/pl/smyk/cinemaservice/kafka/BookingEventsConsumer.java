@@ -21,15 +21,6 @@ public class BookingEventsConsumer {
     @KafkaListener(topics = "booking_created", groupId = "${kafka.consumer.group-id}", containerFactory = "kafkaListenerContainerFactory")
     public void consumeBookingCreatedEvent(BookingEventDto event) {
         log.info("Received booking_created event: {}", event);
-        // The booking_created event primarily signals that seats are blocked.
-        // No direct action needed in cinema-service beyond what reserveSeats already did.
-        // This listener might be useful for auditing or reconciliation.
-        log.info("Booking created event processed for booking ID: {}", event.getBookingId());
-    }
-
-    @KafkaListener(topics = "booking_confirmed", groupId = "${kafka.consumer.group-id}", containerFactory = "kafkaListenerContainerFactory")
-    public void consumeBookingConfirmedEvent(BookingEventDto event) {
-        log.info("Received booking_confirmed event: {}", event);
         try {
             ChangeSeatStatusRequest request = ChangeSeatStatusRequest.builder()
                     .screeningId(event.getScreeningId())

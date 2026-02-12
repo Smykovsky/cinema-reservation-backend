@@ -4,9 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-import pl.smyk.bookingservice.dto.event.PaymentCompletedEvent;
-import pl.smyk.bookingservice.dto.event.PaymentFailedEvent;
 import pl.smyk.bookingservice.service.BookingService;
+import pl.smyk.common.dto.PaymentCompletedEvent;
+import pl.smyk.common.dto.PaymentFailedEvent;
 
 @Component
 @RequiredArgsConstructor

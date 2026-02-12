@@ -172,7 +172,7 @@ public class BookingService {
 
             booking.setStatus(BookingStatus.CONFIRMED);
             bookingRepository.save(booking);
-            bookingEventProducer.sendBookingConfirmedEvent(eventDto);
+            bookingEventProducer.sendBookingCreatedEvent(eventDto);
         } else if (booking.getStatus() == BookingStatus.CONFIRMED) {
             log.info("Booking {} is already confirmed. No action needed.", bookingId);
         } else {
