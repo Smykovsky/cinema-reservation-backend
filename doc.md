@@ -169,7 +169,6 @@ BookingSeats
     "expires_at": "2024-02-15T10:45:00Z"
   }
   ```
-- `booking.confirmed` → po udanej płatności
 - `booking.cancelled` → użytkownik anulował
 - `booking.expired` → upłynął timeout (15 min)
 

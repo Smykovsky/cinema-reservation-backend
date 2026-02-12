@@ -4,19 +4,20 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import pl.smyk.paymentservice.model.Refund;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.UUID;
+import java.time.Instant;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class PaymentRefundedEvent {
-    private Long refundId;
-    private Long paymentId;
+    private Long bookingId;
+    private String bookingNumber;
     private BigDecimal amount;
-    private LocalDateTime refundedAt;
+    private String currency;
+    private String refundId;
+    private String reason;
+    private Instant timestamp;
 }

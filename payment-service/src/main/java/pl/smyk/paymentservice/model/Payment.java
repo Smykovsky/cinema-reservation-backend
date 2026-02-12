@@ -24,8 +24,14 @@ public class Payment {
     @Column(nullable = false)
     private Long bookingId; // Reference to Booking Service
 
+    @Column(nullable = false)
+    private String bookingNumber;
+
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
+
+    @Column(nullable = false, length = 3)
+    private String currency;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

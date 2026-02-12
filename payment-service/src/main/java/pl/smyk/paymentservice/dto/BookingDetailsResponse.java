@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @Builder
 public class BookingDetailsResponse {
     private Long id;
+    private String bookingNumber;
     private BigDecimal totalAmount;
     private String status; // e.g., PENDING, CONFIRMED, CANCELLED, EXPIRED
     private LocalDateTime expiresAt;

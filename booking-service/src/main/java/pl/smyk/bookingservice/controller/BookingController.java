@@ -30,8 +30,8 @@ public class BookingController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> cancelBooking(@PathVariable Long id) {
-        bookingService.cancelBooking(id);
+    public ResponseEntity<Void> cancelBooking(@PathVariable Long id, @RequestBody String reason) {
+        bookingService.cancelBooking(id, reason);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

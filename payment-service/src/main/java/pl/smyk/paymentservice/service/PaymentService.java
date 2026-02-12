@@ -59,7 +59,9 @@ public class PaymentService {
 
         Payment payment = Payment.builder()
                 .bookingId(request.getBookingId())
+                .bookingNumber(bookingDetails.getBookingNumber())
                 .amount(bookingDetails.getTotalAmount())
+                .currency("PLN") // Hardcode for now, or get from bookingDetails if available
                 .paymentMethod("BLIK") // Hardcode for now
                 .status(Payment.PaymentStatus.PENDING)
                 .createdAt(LocalDateTime.now())
@@ -137,10 +139,13 @@ public class PaymentService {
                     log.info("Refund initiated and completed for Payment ID: {}, Refund ID: {}, Stripe Refund ID: {}", paymentId, refund.getId(), stripeRefund.getId());
 
                     paymentEventProducer.sendPaymentRefundedEvent(PaymentRefundedEvent.builder()
-                            .refundId(refund.getId())
-                            .paymentId(payment.getId())
+                            .bookingId(payment.getBookingId())
+                            .bookingNumber(payment.getBookingNumber())
                             .amount(refund.getAmount())
-                            .refundedAt(LocalDateTime.now())
+                            .currency(payment.getCurrency())
+                            .refundId(refund.getProviderRefundId())
+                            .reason(request.getReason() != null ? request.getReason() : "User requested refund")
+                            .timestamp(java.time.Instant.now())
                             .build());
                     break;
                 case "pending":
@@ -150,6 +155,10 @@ public class PaymentService {
                 case "failed":
                     refund.setStatus(Refund.RefundStatus.FAILED);
                     log.warn("Refund initiated and failed for Payment ID: {}, Refund ID: {}, Stripe Refund ID: {}", paymentId, refund.getId(), stripeRefund.getId());
+                    break;
+                default:
+                    refund.setStatus(Refund.RefundStatus.FAILED);
+                    log.error("Unknown refund status for Payment ID: {}, Refund ID: {}, Stripe Refund ID: {}", paymentId, refund.getId(), stripeRefund.getId());
                     break;
             }
             refundRepository.save(refund);
@@ -195,44 +204,44 @@ public class PaymentService {
 
             // Poll for payment status
             String finalStatus = pollPaymentStatus(payment.getProviderTransactionId());
-
             if ("success".equals(finalStatus)) {
                 payment.setStatus(Payment.PaymentStatus.COMPLETED);
                 log.info("Payment ID: {} completed successfully after BLIK confirmation. Stripe PI ID: {}", payment.getId(), payment.getProviderTransactionId());
-                paymentEventProducer.sendPaymentCompletedEvent(PaymentCompletedEvent.builder()
+                PaymentCompletedEvent build = PaymentCompletedEvent.builder()
                         .paymentId(payment.getId())
                         .bookingId(payment.getBookingId())
                         .amount(payment.getAmount())
                         .paymentMethod(payment.getPaymentMethod())
                         .providerTransactionId(payment.getProviderTransactionId())
                         .completedAt(LocalDateTime.now())
-                        .build());
+                        .build();
+                paymentEventProducer.sendPaymentCompletedEvent(build);
             } else if ("failed".equals(finalStatus)) {
                 payment.setStatus(Payment.PaymentStatus.FAILED);
                 log.warn("Payment ID: {} failed after BLIK confirmation. Stripe PI ID: {}", payment.getId(), payment.getProviderTransactionId());
                 paymentEventProducer.sendPaymentFailedEvent(PaymentFailedEvent.builder()
-                        .paymentId(payment.getId())
                         .bookingId(payment.getBookingId())
+                        .bookingNumber(payment.getBookingNumber())
                         .amount(payment.getAmount())
-                        .paymentMethod(payment.getPaymentMethod())
-                        .failedAt(LocalDateTime.now())
+                        .currency(payment.getCurrency())
                         .reason("BLIK payment confirmation failed")
+                        .timestamp(java.time.Instant.now())
                         .build());
             } else if ("in_process".equals(finalStatus)) {
-                // Payment is still processing, keep status as PENDING or similar
                 log.info("Payment ID: {} is still in process after BLIK confirmation. Stripe PI ID: {}", payment.getId(), payment.getProviderTransactionId());
-            } else { // undefined_error
-                payment.setStatus(Payment.PaymentStatus.FAILED); // Treat as failed if an undefined error occurs
+            } else {
+                payment.setStatus(Payment.PaymentStatus.FAILED);
                 log.error("Payment ID: {} encountered an undefined error after BLIK confirmation. Stripe PI ID: {}", payment.getId(), payment.getProviderTransactionId());
                 paymentEventProducer.sendPaymentFailedEvent(PaymentFailedEvent.builder()
-                        .paymentId(payment.getId())
                         .bookingId(payment.getBookingId())
+                        .bookingNumber(payment.getBookingNumber())
                         .amount(payment.getAmount())
-                        .paymentMethod(payment.getPaymentMethod())
-                        .failedAt(LocalDateTime.now())
+                        .currency(payment.getCurrency())
                         .reason("BLIK payment confirmation undefined error")
+                        .timestamp(java.time.Instant.now())
                         .build());
             }
+
             paymentRepository.save(payment);
 
             return BlikConfirmResponse.builder().status(finalStatus).build();

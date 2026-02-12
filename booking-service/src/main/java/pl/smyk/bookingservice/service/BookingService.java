@@ -22,9 +22,11 @@ import java.time.ZoneOffset; // New import for Instant conversion
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BookingService {
 
     private final BookingRepository bookingRepository;
@@ -124,9 +126,15 @@ public class BookingService {
         return buildBookingDetailsResponse(booking, bookingSeats);
     }
 
-    public void cancelBooking(Long bookingId) {
+    @Transactional
+    public void cancelBooking(Long bookingId, String reason) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new BookingNotFoundException("Booking with ID " + bookingId + " not found."));
+
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            log.info("Booking {} is already cancelled. No action needed.", bookingId);
+            return;
+        }
 
         List<Long> seatIds = bookingSeatRepository.findByBooking(booking).stream()
                 .map(BookingSeat::getSeatId)
@@ -142,8 +150,10 @@ public class BookingService {
         booking.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
         bookingEventProducer.sendBookingCancelledEvent(eventDto); // Send event with DTO
+        log.info("Booking {} cancelled due to: {}", bookingId, reason);
     }
 
+    @Transactional
     public void confirmBooking(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new BookingNotFoundException("Booking with ID " + bookingId + " not found."));
@@ -163,6 +173,8 @@ public class BookingService {
             booking.setStatus(BookingStatus.CONFIRMED);
             bookingRepository.save(booking);
             bookingEventProducer.sendBookingConfirmedEvent(eventDto);
+        } else if (booking.getStatus() == BookingStatus.CONFIRMED) {
+            log.info("Booking {} is already confirmed. No action needed.", bookingId);
         } else {
             // Handle case where booking cannot be confirmed (e.g., already cancelled or expired)
             throw new InvalidBookingRequestException("Booking " + bookingId + " cannot be confirmed from its current status: " + booking.getStatus());
