@@ -2,6 +2,7 @@ package pl.smyk.authservice.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
@@ -61,13 +62,16 @@ public class GlobalExceptionController {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
-    // ===== Generic Exception Handler =====
-
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
         ErrorResponse error = new ErrorResponse("Wystąpił nieoczekiwany błąd serwera");
-        // Loguj pełny stack trace dla debugowania
-        ex.printStackTrace();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<Object> handleAccessDenied(AuthorizationDeniedException ex) {
+        ErrorResponse error = new ErrorResponse("Nie posiadasz uprawnień do tego zasobu");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+
 }

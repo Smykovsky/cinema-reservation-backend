@@ -3,6 +3,7 @@ package pl.smyk.authservice.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pl.smyk.authservice.dto.*;
 import pl.smyk.authservice.mapper.UserMapper;
@@ -33,6 +34,7 @@ public class AuthController {
     }
 
     @GetMapping("/user")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<UserDto> getUserData(@RequestHeader("X-User-Email") String email, @RequestHeader("X-User-Scope") String scope, @RequestHeader("X-User-Id") String userId) {
         System.out.println(email + scope + userId);
         User user = userService.findByEmail(email);
