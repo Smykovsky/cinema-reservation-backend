@@ -1,7 +1,5 @@
 package pl.smyk.cinemaservice.kafka;
 
-
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -14,9 +12,7 @@ import pl.smyk.common.dto.BookingEventDto;
 @RequiredArgsConstructor
 @Slf4j
 public class BookingEventsConsumer {
-
     private final ScreeningService screeningService;
-
 
     @KafkaListener(topics = "booking_created", groupId = "${kafka.consumer.group-id}", containerFactory = "kafkaListenerContainerFactory")
     public void consumeBookingCreatedEvent(BookingEventDto event) {
