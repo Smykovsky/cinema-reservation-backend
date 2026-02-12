@@ -64,11 +64,8 @@ public class JwtUtil {
 
     private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, long jwtExpiration) {
         User user = (User) userDetails;
-        String firstName = user.getFirstName();
-        String lastName = user.getLastName();
-        extraClaims.put("roles", userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList());
-        extraClaims.put("first_name", firstName);
-        extraClaims.put("last_name", lastName);
+        extraClaims.put("scope", userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList());
+        extraClaims.put("userId", user.getId());
         return Jwts
                 .builder()
                 .setClaims(extraClaims)

@@ -23,79 +23,81 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 @Component
 public class AuthenticationFilter extends AbstractGatewayFilterFactory<AuthenticationFilter.Config> {
 
-  private static final Logger logger = Logger.getLogger(AuthenticationFilter.class.getName());
+    private static final Logger logger = Logger.getLogger(AuthenticationFilter.class.getName());
 
-  @Autowired
-  private RouteValidator validator;
+    @Autowired
+    private RouteValidator validator;
 
-  @Autowired
-  private JwtUtil jwtUtil;
+    @Autowired
+    private JwtUtil jwtUtil;
 
-  public AuthenticationFilter() {
-    super(Config.class);
-  }
+    public AuthenticationFilter() {
+        super(Config.class);
+    }
 
-  @Override
-  public GatewayFilter apply(Config config) {
-    return (exchange, chain) -> {
-      ServerHttpRequest request = exchange.getRequest();
+    @Override
+    public GatewayFilter apply(Config config) {
+        return (exchange, chain) -> {
+            ServerHttpRequest request = exchange.getRequest();
 
-      if (validator.isSecured.test(request)) {
-        if (!request.getHeaders().containsKey(AUTHORIZATION)) {
-          logger.warning("Missing authorization header");
-          return handleUnauthorized(exchange, "Missing authorization header");
-        }
+            if (validator.isSecured.test(request)) {
+                if (!request.getHeaders().containsKey(AUTHORIZATION)) {
+                    logger.warning("Missing authorization header");
+                    return handleUnauthorized(exchange, "Missing authorization header");
+                }
 
-        String authHeader = request.getHeaders().getFirst(AUTHORIZATION);
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-          authHeader = authHeader.substring(7);
-        } else {
-          logger.warning("Invalid authorization header");
-          return handleUnauthorized(exchange, "Invalid authorization header");
-        }
+                String authHeader = request.getHeaders().getFirst(AUTHORIZATION);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                    authHeader = authHeader.substring(7);
+                } else {
+                    logger.warning("Invalid authorization header");
+                    return handleUnauthorized(exchange, "Invalid authorization header");
+                }
 
-        try {
-          jwtUtil.validateToken(authHeader);
-          logger.info("Token validated successfully");
+                try {
+                    jwtUtil.validateToken(authHeader);
+                    logger.info("Token validated successfully");
 
-          Claims claims = jwtUtil.extractAllClaims(authHeader);
-          String email = claims.getSubject();
-          List<String> roles = (List<String>) claims.get("roles");
+                    Claims claims = jwtUtil.extractAllClaims(authHeader);
+                    String email = claims.getSubject();
+                    Long userId = claims.get("userId", Long.class);
+                    List<String> scope = claims.get("scope", List.class);
 
-          if (validator.requiresOperatorRole.test(request)) {
-            if (!roles.contains("OPERATOR")) {
-              logger.warning("Operator role required");
-              return handleUnauthorized(exchange, "Operator role required");
+                    if (validator.requiresOperatorRole.test(request)) {
+                        if (!scope.contains("OPERATOR")) {
+                            logger.warning("Operator role required");
+                            return handleUnauthorized(exchange, "Operator role required");
+                        }
+                    }
+
+                    ServerHttpRequest modifiedRequest = exchange.getRequest().mutate()
+                            .header("X-User-Email", email)
+                            .header("X-User-Scope", scope.stream().collect(Collectors.joining(",")))
+                            .header("X-User-Id", userId.toString())
+                            .build();
+
+                    return chain.filter(exchange.mutate().request(modifiedRequest).build());
+
+                } catch (Exception e) {
+                    logger.severe("Invalid or expired token: " + e.getMessage());
+                    return handleUnauthorized(exchange, "Invalid or expired token");
+                }
             }
-          }
+            return chain.filter(exchange);
+        };
+    }
 
-          ServerHttpRequest modifiedRequest = exchange.getRequest().mutate()
-                  .header("X-User-Email", email)
-                  .header("X-User-Roles", roles.stream().collect(Collectors.joining(",")))
-                  .build();
-
-          return chain.filter(exchange.mutate().request(modifiedRequest).build());
-
-        } catch (Exception e) {
-          logger.severe("Invalid or expired token: " + e.getMessage());
-          return handleUnauthorized(exchange, "Invalid or expired token");
-        }
-      }
-      return chain.filter(exchange);
-    };
-  }
-
-  private Mono<Void> handleUnauthorized(ServerWebExchange exchange, String message) {
-    ServerHttpResponse response = exchange.getResponse();
-    response.setStatusCode(HttpStatus.UNAUTHORIZED);
-    response.getHeaders().add(HttpHeaders.CONTENT_TYPE, "application/json");
-    String body = "{\"error\": \"" + message + "\"}";
-    DataBuffer buffer = response.bufferFactory().wrap(body.getBytes());
-    return response.writeWith(Mono.just(buffer));
-  }
+    private Mono<Void> handleUnauthorized(ServerWebExchange exchange, String message) {
+        ServerHttpResponse response = exchange.getResponse();
+        response.setStatusCode(HttpStatus.UNAUTHORIZED);
+        response.getHeaders().add(HttpHeaders.CONTENT_TYPE, "application/json");
+        String body = "{\"error\": \"" + message + "\"}";
+        DataBuffer buffer = response.bufferFactory().wrap(body.getBytes());
+        return response.writeWith(Mono.just(buffer));
+    }
 
 
-  public static class Config {
+    public static class Config {
 
-  }
+    }
 }

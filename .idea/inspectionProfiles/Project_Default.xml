@@ -6,6 +6,8 @@
         <set>
           <option value="User-Email" />
           <option value="X-User-Email" />
+          <option value="X-User-Scope" />
+          <option value="X-User-Id" />
         </set>
       </option>
     </inspection_tool>
