@@ -2,6 +2,7 @@ package pl.smyk.cinemaservice.exception.handler;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import pl.smyk.cinemaservice.exception.*;
@@ -64,5 +65,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleSeatAlreadyExistsException(SeatAlreadyExistsException ex) {
         ErrorResponse error = new ErrorResponse(ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<Object> handleAccessDenied(AuthorizationDeniedException ex) {
+        ErrorResponse error = new ErrorResponse("Nie posiadasz uprawnień do tego zasobu");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
 }

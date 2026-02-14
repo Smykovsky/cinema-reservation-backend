@@ -67,11 +67,4 @@ public class GlobalExceptionController {
         ErrorResponse error = new ErrorResponse("Wystąpił nieoczekiwany błąd serwera");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
-
-    @ExceptionHandler(AuthorizationDeniedException.class)
-    public ResponseEntity<Object> handleAccessDenied(AuthorizationDeniedException ex) {
-        ErrorResponse error = new ErrorResponse("Nie posiadasz uprawnień do tego zasobu");
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
-    }
-
 }
