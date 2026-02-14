@@ -37,7 +37,7 @@ public class SecurityConfig {
                         sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/auth/v3/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(gatewayAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class); // Add custom filter
