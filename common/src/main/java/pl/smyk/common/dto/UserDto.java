@@ -12,6 +12,7 @@ public class UserDto {
     private String firstName;
     private String lastName;
     private List<String> roles;
+    private List<String> permissions;
     @Pattern(
             regexp = "^\\+?[1-9]\\d{1,14}$",
             message = "Numer telefonu musi być w formacie E.164 (np. +48123456789)"

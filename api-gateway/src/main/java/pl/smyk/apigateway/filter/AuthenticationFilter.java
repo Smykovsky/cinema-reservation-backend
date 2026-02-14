@@ -63,8 +63,20 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                     Long userId = claims.get("userId", Long.class);
                     List<String> scope = claims.get("scope", List.class);
 
+                    List<String> roles = scope.stream()
+                            .filter(s -> s.startsWith("ROLE_"))
+                            .map(s -> s.substring(5))
+                            .collect(Collectors.toList());
+
+                    List<String> permissions = scope.stream()
+                            .filter(s -> !s.startsWith("ROLE_"))
+                            .collect(Collectors.toList());
+
+                    logger.info("Extracted Roles: " + String.join(",", roles));
+                    logger.info("Extracted Permissions: " + String.join(",", permissions));
+
                     if (validator.requiresOperatorRole.test(request)) {
-                        if (!scope.contains("OPERATOR")) {
+                        if (!roles.contains("OPERATOR")) { // Check for OPERATOR role directly
                             logger.warning("Operator role required");
                             return handleUnauthorized(exchange, "Operator role required");
                         }
@@ -72,7 +84,8 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
 
                     ServerHttpRequest modifiedRequest = exchange.getRequest().mutate()
                             .header("X-User-Email", email)
-                            .header("X-User-Scope", scope.stream().collect(Collectors.joining(",")))
+                            .header("X-User-Roles", String.join(",", roles))
+                            .header("X-User-Permissions", String.join(",", permissions))
                             .header("X-User-Id", userId.toString())
                             .build();
 

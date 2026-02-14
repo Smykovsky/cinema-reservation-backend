@@ -13,7 +13,8 @@ public interface UserMapper {
     @Mapping(source = "email", target = "email")
     @Mapping(source = "firstName", target = "firstName")
     @Mapping(source = "lastName", target = "lastName")
-    @Mapping(source = "roles", target = "roles")
+    @Mapping(target = "roles", expression = "java(user.getRoles().stream().map(role -> role.name()).collect(java.util.stream.Collectors.toList()))")
+    @Mapping(target = "permissions", expression = "java(user.getRoles().stream().flatMap(role -> role.getPermissions().stream()).map(permission -> permission.name()).distinct().sorted().collect(java.util.stream.Collectors.toList()))")
     @Mapping(source = "totpEnabled", target = "totpEnabled")
     UserDto userToUserDto(User user);
 

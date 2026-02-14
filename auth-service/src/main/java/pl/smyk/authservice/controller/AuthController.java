@@ -34,9 +34,8 @@ public class AuthController {
     }
 
     @GetMapping("/user")
-    @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<UserDto> getUserData(@RequestHeader("X-User-Email") String email, @RequestHeader("X-User-Scope") String scope, @RequestHeader("X-User-Id") String userId) {
-        System.out.println(email + scope + userId);
+    @PreAuthorize("hasAuthority('USER_READ')")
+    public ResponseEntity<UserDto> getUserData(@RequestHeader("X-User-Email") String email) {
         User user = userService.findByEmail(email);
         UserDto userDto = UserMapper.INSTANCE.userToUserDto(user);
         return ResponseEntity.ok(userDto);
