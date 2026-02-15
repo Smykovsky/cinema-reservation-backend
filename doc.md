@@ -1,163 +1,203 @@
 # System Rezerwacji Biletów - Architektura Mikroserwisów
 
-## 1. USER SERVICE
+## 0. API GATEWAY
+Opis: Pojedynczy punkt wejścia dla wszystkich zewnętrznych żądań. Odpowiada za routing żądań do odpowiednich mikroserwisów, autentykację użytkowników na podstawie tokenów JWT (weryfikacja i przekazywanie informacji o rolach/uprawnieniach w nagłówkach), wstępne filtrowanie i podstawowe mechanizmy bezpieczeństwa.
+### Technologie
+- Spring Cloud Gateway
+- JWT (io.jsonwebtoken) do parsowania tokenów
+
+## 1. EUREKA SERVER
+Opis: Serwer Discovery, umożliwiający mikroserwisom rejestrowanie się i odnajdywanie nawzajem.
+### Technologie
+- Spring Cloud Netflix Eureka Server
+
+## 2. CONFIG SERVER
+Opis: Centralny serwer konfiguracji dla wszystkich mikroserwisów. Udostępnia konfigurację z lokalnego systemu plików (profil 'native') i rejestruje się w Eureka Server, aby inne serwisy mogły go odnaleźć. Działa na porcie 8888.
+### Technologie
+- Spring Cloud Config Server
+
+## 3. COMMON
+Opis: Moduł zawierający wspólne definicje obiektów transferu danych (DTO) oraz obiektów zdarzeń Kafka, które są współdzielone przez wiele mikroserwisów. Zapewnia spójność typów danych w całym systemie.
+### Technologie
+- Java, Spring (podstawowe typy)
+
+## 4. AUTH SERVICE
+Opis: Serwis odpowiedzialny za zarządzanie użytkownikami, uwierzytelnianie (rejestracja, logowanie, JWT) oraz autoryzację opartą na rolach i uprawnieniach.
 
 ### Model danych
 ```sql
 Users
-- id: UUID (PK)
+- id: BIGINT (PK)
 - email: VARCHAR(255) UNIQUE
 - password_hash: VARCHAR(255)
 - first_name: VARCHAR(100)
 - last_name: VARCHAR(100)
 - phone: VARCHAR(20)
 - created_at: TIMESTAMP
+- roles: VARCHAR[] (przechowywane jako ENUMy Role)
+- totp_enabled: BOOLEAN
+- totp_secret: VARCHAR(255)
 ```
 
 ### REST API
-- `POST /auth/register` - rejestracja
-- `POST /auth/login` - logowanie (zwraca JWT)
-- `GET /users/{id}` - profil użytkownika
-- `PUT /users/{id}` - aktualizacja profilu
+- `POST /api/auth/register` - rejestracja nowego użytkownika
+- `POST /api/auth/login` - logowanie użytkownika (zwraca JWT)
+- `GET /api/auth/user` - pobierz dane zalogowanego użytkownika (wymaga permisji `USER_READ`)
+- `PUT /api/auth/user/{userId}` - aktualizacja danych użytkownika
+- `POST /api/auth/totp/enable` - włączenie uwierzytelniania dwuskładnikowego (TOTP)
+- `POST /api/auth/totp/verify` - weryfikacja kodu TOTP
+- `POST /api/auth/totp/disable` - wyłączenie uwierzytelniania dwuskładnikowego (TOTP)
 
 ### Kafka Events (Publisher)
-- `user.registered` - nowy użytkownik
+- Brak
 
 ---
 
-## 2. MOVIE SERVICE
+## 5. MOVIE SERVICE
 
 ### Model danych
 ```sql
 Movies
-- id: UUID (PK)
+- id: BIGINT (PK)
 - title: VARCHAR(255)
 - description: TEXT
 - duration_minutes: INT
 - release_date: DATE
-- genres: VARCHAR[] (array)
-- poster_url: VARCHAR(500)
-- age_rating: VARCHAR(10)
+- genres: (relacja Many-to-Many z tabelą Genres)
 
 Genres
-- id: UUID (PK)
+- id: BIGINT (PK)
 - name: VARCHAR(50)
 ```
 
 ### REST API
-- `GET /movies` - lista filmów (filtrowanie, paginacja)
-- `GET /movies/{id}` - szczegóły filmu
-- `POST /movies` - dodaj film (admin)
+- `GET /api/movie` - lista filmów (filtrowanie, paginacja)
+- `GET /api/movie/{id}` - szczegóły filmu
+- `POST /api/movie` - dodaj film
+- `PUT /api/movie` - aktualizuj film
+- `DELETE /api/movie/{id}` - usuń film
 
 ### Kafka Events
-Brak - read-only dla użytkowników
+Brak
 
 ---
 
-## 3. CINEMA SERVICE
+## 6. CINEMA SERVICE
+Opis: Zarządza danymi kin, sal projekcyjnych oraz seansów filmowych, w tym ich dostępnością miejsc.
 
 ### Model danych
 ```sql
 Cinemas
-- id: UUID (PK)
+- id: BIGINT (PK)
 - name: VARCHAR(255)
 - address: VARCHAR(500)
 - city: VARCHAR(100)
+- phone: VARCHAR(20)
+- is_active: BOOLEAN
+- created_at: TIMESTAMP
+- updated_at: TIMESTAMP
 
 Halls
-- id: UUID (PK)
-- cinema_id: UUID (FK → Cinemas)
+- id: BIGINT (PK)
+- cinema_id: BIGINT (FK → Cinemas)
 - name: VARCHAR(100)
 - total_seats: INT
+- features: VARCHAR[] (array)
+- is_active: BOOLEAN
+- created_at: TIMESTAMP
 
 Seats
-- id: UUID (PK)
-- hall_id: UUID (FK → Halls)
-- row: VARCHAR(5)
+- id: BIGINT (PK)
+- hall_id: BIGINT (FK → Halls)
+- row: INT
 - number: INT
 - seat_type: ENUM('STANDARD', 'VIP', 'WHEELCHAIR')
-```
 
-### REST API
-- `GET /cinemas` - lista kin
-- `GET /cinemas/{id}/halls` - sale w kinie
-- `GET /halls/{id}/seats` - miejsca w sali
-- `POST /cinemas` - dodaj kino (admin)
-
-### Kafka Events
-Brak - struktura statyczna
-
----
-
-## 4. SCREENING SERVICE
-
-### Model danych
-```sql
 Screenings
-- id: UUID (PK)
-- movie_id: UUID (reference → Movie Service)
-- hall_id: UUID (reference → Cinema Service)
+- id: BIGINT (PK)
+- movie_id: BIGINT (reference → Movie Service)
+- hall_id: BIGINT (reference → Cinema Service)
 - start_time: TIMESTAMP
+- end_time: TIMESTAMP
 - base_price: DECIMAL(10,2)
+- vip_price: DECIMAL(10,2)
+- wheelchair_price: DECIMAL(10,2)
+- status: ENUM('SCHEDULED', 'ONGOING', 'COMPLETED', 'CANCELLED')
+- created_at: TIMESTAMP
 
 ScreeningSeats
-- id: UUID (PK)
-- screening_id: UUID (FK → Screenings)
-- seat_id: UUID (reference → Cinema Service)
+- screening_id: BIGINT (PK, FK → Screenings)
+- seat_id: BIGINT (PK, FK → Cinema Service)
 - status: ENUM('AVAILABLE', 'RESERVED', 'SOLD')
+- reserved_by: VARCHAR(255) (ID rezerwacji, jeśli zarezerwowane)
 - reserved_until: TIMESTAMP (nullable)
+- created_at: TIMESTAMP
+- updated_at: TIMESTAMP
 ```
 
 ### REST API
-- `GET /screenings?movie_id=&cinema_id=&date=` - seanse
-- `GET /screenings/{id}/seats` - dostępność miejsc
-- `PUT /screenings/{id}/seats/reserve` - tymczasowa rezerwacja (internal)
-- `PUT /screenings/{id}/seats/release` - zwolnienie miejsc (internal)
+- `GET /api/cinema` - lista kin
+- `GET /api/cinema/{id}` - szczegóły kina
+- `POST /api/cinema` - dodaj kino
+- `PUT /api/cinema/{id}` - aktualizuj kino
+- `DELETE /api/cinema/{id}` - usuń kino
+- `GET /api/hall` - lista sal
+- `GET /api/hall/{id}` - szczegóły sali
+- `POST /api/hall` - dodaj salę
+- `PUT /api/hall/{id}` - aktualizuj salę
+- `DELETE /api/hall/{id}` - usuń salę
+- `GET /api/screening` - lista seansów
+- `GET /api/screening/{id}` - szczegóły seansu
+- `POST /api/screening` - dodaj seans
+- `PUT /api/screening/{id}` - aktualizuj seans
+- `DELETE /api/screening/{id}` - usuń seans
+- `PUT /api/screening/{id}/seats/reserve` - rezerwacja miejsc
+- `GET /api/screening/{id}/seats/available` - dostępne miejsca dla seansu
+- `GET /api/screening/{id}/seats` - wszystkie miejsca dla seansu
 
 ### Kafka Events (Consumer)
-- `booking.confirmed` → zmienia status miejsc na SOLD
-- `booking.cancelled` → zwalnia miejsca
-- `booking.expired` → zwalnia miejsca
+- `booking_created` → zmienia status miejsc na SOLD (po potwierdzeniu płatności)
+- `booking_cancelled` → zwalnia miejsca
+- `booking_expired` → zwalnia miejsca
 
 ---
 
-## 5. BOOKING SERVICE ⭐ (Core)
+## 7. BOOKING SERVICE
 
 ### Model danych
 ```sql
 Bookings
-- id: UUID (PK)
-- user_id: UUID (reference → User Service)
-- screening_id: UUID (reference → Screening Service)
+- id: BIGINT (PK)
+- user_id: BIGINT (reference → User Service)
+- screening_id: BIGINT (reference → Cinema Service)
 - booking_number: VARCHAR(20) UNIQUE
 - status: ENUM('PENDING', 'CONFIRMED', 'CANCELLED', 'EXPIRED')
 - total_amount: DECIMAL(10,2)
-- expires_at: TIMESTAMP
-- created_at: TIMESTAMP
+- expires_at: DATETIME
+- created_at: DATETIME
 
 BookingSeats
-- id: UUID (PK)
-- booking_id: UUID (FK → Bookings)
-- seat_id: UUID (reference → Cinema Service)
+- id: BIGINT (PK)
+- booking_id: BIGINT (FK → Bookings)
+- seat_id: BIGINT (reference → Cinema Service)
 - price: DECIMAL(10,2)
 ```
 
 ### REST API
-- `POST /bookings` - rozpocznij rezerwację
+- `POST /api/booking` - rozpocznij rezerwację
   ```json
   {
     "screening_id": "uuid",
     "seat_ids": ["uuid1", "uuid2"]
   }
   ```
-- `GET /bookings/{id}` - szczegóły rezerwacji
-- `DELETE /bookings/{id}` - anuluj rezerwację
+- `GET /api/booking/{id}` - szczegóły rezerwacji
+- `DELETE /api/booking/{id}` - anuluj rezerwację
 
 ### Komunikacja REST (wywołuje synchronicznie)
-- `User Service: GET /users/{id}` - walidacja użytkownika
-- `Cinema Service Service: GET /screenings/{id}` - dane seansu
-- `Cinema Service: PUT /screenings/{id}/seats/reserve` - blokada miejsc
-- `Payment Service: POST /payments` - inicjalizacja płatności
+- `Auth Service`: (Brak bezpośredniego wywołania synchronizacyjnego) `userId` jest przekazywane w żądaniu utworzenia rezerwacji, zakładając wstępną walidację przez API Gateway.
+- `Cinema Service: GET /api/screening/{id}` - dane seansu
+- `Cinema Service: PUT /api/screening/{id}/seats/reserve` - blokada miejsc
 
 ### Kafka Events (Publisher)
 - `booking.created` → miejsca zablokowane
@@ -178,28 +218,33 @@ BookingSeats
 
 ---
 
-## 6. PAYMENT SERVICE
+## 8. PAYMENT SERVICE
 
 ### Model danych
 ```sql
 Payments
-- id: UUID (PK)
-- booking_id: UUID (reference → Booking Service)
+- id: BIGINT (PK)
+- booking_id: BIGINT (reference → Booking Service)
+- user_id: BIGINT (reference → User Service)
+- booking_number: VARCHAR(20)
 - amount: DECIMAL(10,2)
+- currency: VARCHAR(3)
 - status: ENUM('PENDING', 'COMPLETED', 'FAILED', 'REFUNDED')
 - payment_method: VARCHAR(50)
 - provider_transaction_id: VARCHAR(255)
-- created_at: TIMESTAMP
+- created_at: DATETIME
 
 Refunds
-- id: UUID (PK)
-- payment_id: UUID (FK → Payments)
+- id: BIGINT (PK)
+- payment_id: BIGINT (FK → Payments)
+- user_id: BIGINT (reference → User Service)
 - amount: DECIMAL(10,2)
 - status: ENUM('PENDING', 'COMPLETED', 'FAILED')
+- provider_refund_id: VARCHAR(255)
 ```
 
 ### REST API
-- `POST /payments` - inicjalizacja płatności
+- `POST /api/payment` - inicjalizacja płatności
   ```json
   {
     "booking_id": "uuid",
@@ -207,8 +252,9 @@ Refunds
     "payment_method": "CARD"
   }
   ```
-- `POST /payments/{id}/refund` - zwrot pieniędzy
-- `POST /webhooks/stripe` - callback od providera płatności
+- `GET /api/payment/{id}` - szczegóły płatności
+- `POST /api/payment/{id}/refund` - zwrot pieniędzy
+- `POST /api/payment/{id}/confirm-blik` - potwierdzenie płatności BLIK
 
 ### Kafka Events (Publisher)
 - `payment.completed` → płatność udana
@@ -217,26 +263,17 @@ Refunds
 
 ---
 
-## 7. NOTIFICATION SERVICE
+## 9. NOTIFICATION SERVICE
 
-### Model danych
-```sql
-Notifications
-- id: UUID (PK)
-- user_id: UUID (reference → User Service)
-- type: ENUM('EMAIL', 'SMS')
-- template: VARCHAR(100)
-- status: ENUM('PENDING', 'SENT', 'FAILED')
-- sent_at: TIMESTAMP
-```
+
 
 ### REST API
 Brak (tylko wewnętrzne)
 
 ### Kafka Events (Consumer)
-- `booking.confirmed` → wyślij email z potwierdzeniem + QR code
-- `booking.cancelled` → wyślij email o anulowaniu
-- `payment.failed` → wyślij powiadomienie o błędzie
+- `payment_completed` → wyślij potwierdzenie płatności / bilety
+- `payment_failed` → wyślij powiadomienie o błędzie płatności
+- `payment_refunded` → wyślij powiadomienie o zwrocie
 
 ---
 
@@ -244,18 +281,20 @@ Brak (tylko wewnętrzne)
 
 ### 1. Użytkownik wybiera seans
 ```
-[Frontend] 
+[Frontend]
   → REST: GET /screenings?movie_id=X&date=Y
-  → [Screening Service]
+  → [API Gateway]
+  → [Cinema Service]
 ```
 
 ### 2. Użytkownik wybiera miejsca i tworzy rezerwację
 ```
 [Frontend]
   → REST: POST /bookings {screening_id, seat_ids}
+  → [API Gateway]
   → [Booking Service]
-      → REST: GET /users/{id} → [User Service]
-      → REST: PUT /screenings/{id}/seats/reserve → [Screening Service]
+      → (userId przekazane z nagłówka, walidacja przez API Gateway)
+      → REST: PUT /api/screening/{id}/seats/reserve → [Cinema Service]
       → Tworzy booking (status: PENDING)
       → KAFKA: publikuje booking.created
 ```
@@ -264,6 +303,7 @@ Brak (tylko wewnętrzne)
 ```
 [Frontend]
   → REST: POST /payments {booking_id, amount}
+  → [API Gateway]
   → [Payment Service]
       → Stripe API: tworzy payment intent
       → Czeka na webhook
@@ -284,32 +324,16 @@ Brak (tylko wewnętrzne)
   → Aktualizuje booking (status: CONFIRMED)
   → KAFKA: publikuje booking.confirmed
 
-[Screening Service] (konsumuje booking.confirmed)
+[Cinema Service] (konsumuje booking.created)
   → Zmienia status miejsc: RESERVED → SOLD
 
-[Notification Service] (konsumuje booking.confirmed)
-  → REST: GET /users/{id} → [User Service]
-  → REST: GET /screenings/{id} → [Screening Service]
-  → Wysyła email z QR code
+[Notification Service] (konsumuje payment.completed)
+  → REST: GET /api/auth/user (lub inny endpoint) → [Auth Service] - pobranie danych użytkownika
+  → REST: GET /api/screening/{id} → [Cinema Service] - pobranie danych seansu
+  → Wysyła email z potwierdzeniem + QR code
 ```
 
----
-
-## WZORCE KOMUNIKACJI
-
-### REST (Synchroniczna) - używamy gdy:
-- Potrzebujemy natychmiastowej odpowiedzi
-- Walidacja danych (czy user istnieje?)
-- Pobieranie danych (lista filmów, szczegóły seansu)
-- Operacje transakcyjne (rezerwacja miejsc)
-
-### Kafka (Asynchroniczna) - używamy gdy:
-- Zdarzenie, na które reaguje wiele serwisów
-- Nie potrzebujemy natychmiastowej odpowiedzi
-- Event-driven architecture
-- Rozluźnione powiązanie między serwisami
-
----
+--
 
 ## SAGA PATTERN - Obsługa błędów
 
@@ -320,8 +344,8 @@ Brak (tylko wewnętrzne)
 3. KAFKA: payment.failed
 4. Booking Service konsumuje → anuluje rezerwację
 5. KAFKA: booking.cancelled
-6. Screening Service konsumuje → zwalnia miejsca
-7. Notification Service konsumuje → wysyła email o błędzie
+6. Cinema Service konsumuje → zwalnia miejsca
+7. Notification Service konsumuje → wysyła powiadomienie o błędzie płatności (konsumuje payment.failed)
 ```
 
 ### Scenariusz: Timeout rezerwacji (brak płatności)
@@ -330,28 +354,5 @@ Brak (tylko wewnętrzne)
 2. Znajduje rezerwacje gdzie expires_at < now()
 3. Zmienia status: PENDING → EXPIRED
 4. KAFKA: booking.expired
-5. Screening Service konsumuje → zwalnia miejsca
+5. Cinema Service konsumuje → zwalnia miejsca
 ```
-
----
-
-## TECHNOLOGIE
-
-**Backend:** Spring Boot (Java)
-**Database:** PostgreSQL
-**Message Broker:** Apache Kafka
-**API Gateway:** Spring Cloud Gateway / Kong
-**Cache:** Redis (dla Screening Service - dostępność miejsc)
-**Container:** Docker + Kubernetes
-
----
-
-## PORZĄDEK IMPLEMENTACJI
-
-1. User Service (autentykacja JWT)
-2. Movie Service (prosty CRUD)
-3. Cinema Service (CRUD + relacje)
-4. Screening Service (agregacja danych, cache)
-5. Booking Service (Saga pattern, Kafka)
-6. Payment Service (Stripe integration)
-7. Notification Service (email templates)
