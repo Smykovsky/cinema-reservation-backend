@@ -11,11 +11,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pl.smyk.common.dto.BatchMovieRequest;
+import pl.smyk.common.dto.MovieDto;
 import pl.smyk.movieservice.dto.*;
 import pl.smyk.movieservice.service.MovieService;
 
 import java.time.LocalDate;
 import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/movie")
@@ -44,13 +46,17 @@ public class MovieController {
     }
 
     @PostMapping
-    public ResponseEntity<MovieDto> createMovie(@Valid @RequestBody CreateMovieRequest createMovieRequest) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(movieService.createMovie(createMovieRequest));
+    public ResponseEntity<MovieDto> createMovie(
+            @RequestPart("movie") @Valid CreateMovieRequest createMovieRequest,
+            @RequestPart(value = "image", required = false) MultipartFile imageFile) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(movieService.createMovie(createMovieRequest, imageFile));
     }
 
     @PutMapping
-    public ResponseEntity<MovieDto> updateMovie(@Valid @RequestBody UpdateMovieRequest updateMovieRequest) {
-        return ResponseEntity.ok(movieService.updateMovie(updateMovieRequest));
+    public ResponseEntity<MovieDto> updateMovie(
+            @RequestPart("movie") @Valid UpdateMovieRequest updateMovieRequest,
+            @RequestPart(value = "image", required = false) MultipartFile imageFile) {
+        return ResponseEntity.ok(movieService.updateMovie(updateMovieRequest, imageFile));
     }
 
     @DeleteMapping("/{id}")

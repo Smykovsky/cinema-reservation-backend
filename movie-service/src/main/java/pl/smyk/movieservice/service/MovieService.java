@@ -5,14 +5,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import pl.smyk.common.dto.BatchMovieRequest;
+import pl.smyk.common.dto.MovieDto;
 import pl.smyk.movieservice.dto.CreateMovieRequest;
-import pl.smyk.movieservice.dto.MovieDto;
 import pl.smyk.movieservice.dto.MovieFilterDto;
 import pl.smyk.movieservice.dto.UpdateMovieRequest;
 import pl.smyk.movieservice.exception.MovieAlreadyExistsException;
 import pl.smyk.movieservice.exception.MovieNotFoundException;
 import pl.smyk.movieservice.mapper.MovieMapper;
+import pl.smyk.movieservice.minio.MinioService;
 import pl.smyk.movieservice.model.Genre;
 import pl.smyk.movieservice.model.Movie;
 import pl.smyk.movieservice.repository.GenreRepository;
@@ -31,6 +33,7 @@ public class MovieService {
     private final MovieRepository movieRepository;
     private final GenreRepository genreRepository;
     private final MovieMapper movieMapper;
+    private final MinioService minioService;
 
     public Page<MovieDto> getAllMovies(MovieFilterDto filter, Pageable pageable) {
         Page<Movie> movies = movieRepository.findAll(filter.toSpecification(), pageable);
@@ -50,14 +53,21 @@ public class MovieService {
         return movieMapper.toDto(movie);
     }
 
-    public MovieDto createMovie(CreateMovieRequest createMovieRequest) {
+    public MovieDto createMovie(CreateMovieRequest createMovieRequest, MultipartFile imageFile) {
         if (movieRepository.findByTitle(createMovieRequest.getTitle()).isPresent()) {
             throw new MovieAlreadyExistsException("Movie with title " + createMovieRequest.getTitle() + " already exists");
         }
 
         Movie movie = movieMapper.toEntity(createMovieRequest);
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                String imageUrl = minioService.uploadFile(imageFile);
+                movie.setImageUrl(imageUrl);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to upload image to Minio", e);
+            }
+        }
 
-        // Pobierz gatunki z bazy danych
         Set<Genre> genres = createMovieRequest.getGenreIds().stream()
                 .map(id -> genreRepository.findById(id)
                         .orElseThrow(() -> new RuntimeException("Genre not found with id: " + id)))
@@ -69,7 +79,7 @@ public class MovieService {
         return movieMapper.toDto(savedMovie);
     }
 
-    public MovieDto updateMovie(UpdateMovieRequest updateMovieRequest) {
+    public MovieDto updateMovie(UpdateMovieRequest updateMovieRequest, MultipartFile imageFile) {
         Movie existingMovie = movieRepository.findById(updateMovieRequest.getId())
                 .orElseThrow(() -> new MovieNotFoundException("Movie with id " + updateMovieRequest.getId() + " not found"));
 
@@ -80,8 +90,18 @@ public class MovieService {
 
         Movie updatedMovie = movieMapper.toEntity(updateMovieRequest);
         updatedMovie.setId(existingMovie.getId());
+        updatedMovie.setImageUrl(existingMovie.getImageUrl());
 
-        // Pobierz gatunki z bazy danych
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                String imageUrl = minioService.uploadFile(imageFile);
+                updatedMovie.setImageUrl(imageUrl);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to upload image to Minio", e);
+            }
+        }
+
+
         Set<Genre> genres = updateMovieRequest.getGenreIds().stream()
                 .map(id -> genreRepository.findById(id)
                         .orElseThrow(() -> new RuntimeException("Genre not found with id: " + id)))

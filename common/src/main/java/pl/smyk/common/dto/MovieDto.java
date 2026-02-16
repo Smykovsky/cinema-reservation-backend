@@ -19,4 +19,5 @@ public class MovieDto {
     private Integer duration;
     private Set<String> genres;
     private LocalDate releaseDate;
+    private String imageUrl;
 }

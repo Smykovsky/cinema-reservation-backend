@@ -27,7 +27,7 @@ public class Movie {
     private String description;
 
     @Column(nullable = false)
-    private Integer duration; // in minutes
+    private Integer duration;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -39,4 +39,5 @@ public class Movie {
 
     @Column(nullable = false)
     private LocalDate releaseDate;
+    private String imageUrl;
 }
