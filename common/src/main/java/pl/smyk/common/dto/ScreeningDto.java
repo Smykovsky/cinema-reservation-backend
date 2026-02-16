@@ -1,14 +1,15 @@
-package pl.smyk.cinemaservice.dto;
+package pl.smyk.common.dto;
 
-import lombok.Builder;
-import lombok.Value;
-import pl.smyk.cinemaservice.model.ScreeningStatus;
+import lombok.*;
+import lombok.extern.jackson.Jacksonized;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 
-@Value
+@Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ScreeningDto {
     Long id;
     Long movieId;

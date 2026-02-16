@@ -42,6 +42,13 @@ spring:
           filters:
             - AuthenticationFilter
 
+        - id: aggregator-service
+          uri: lb://aggregator-service
+          predicates:
+            - Path=/api/aggregator/**
+          filters:
+            - AuthenticationFilter
+
 springdoc:
   swagger-ui:
     urls:
