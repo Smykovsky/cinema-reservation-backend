@@ -10,10 +10,12 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import pl.smyk.common.dto.BatchMovieRequest;
 import pl.smyk.movieservice.dto.*;
 import pl.smyk.movieservice.service.MovieService;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/movie")
@@ -34,6 +36,11 @@ public class MovieController {
     @GetMapping("/{id}")
     public ResponseEntity<MovieDto> getMovieById(@PathVariable Long id) {
         return ResponseEntity.ok(movieService.getMovieById(id));
+    }
+
+    @PostMapping("/batch")
+    public ResponseEntity<List<MovieDto>> getMoviesByIds(@RequestBody BatchMovieRequest batchMovieRequest) {
+        return ResponseEntity.ok(movieService.getMoviesByIds(batchMovieRequest));
     }
 
     @PostMapping

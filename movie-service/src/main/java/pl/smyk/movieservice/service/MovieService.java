@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import pl.smyk.common.dto.BatchMovieRequest;
 import pl.smyk.movieservice.dto.CreateMovieRequest;
 import pl.smyk.movieservice.dto.MovieDto;
 import pl.smyk.movieservice.dto.MovieFilterDto;
@@ -19,6 +20,7 @@ import pl.smyk.movieservice.repository.MovieRepository;
 import pl.smyk.movieservice.specification.MovieSpecification;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -33,6 +35,13 @@ public class MovieService {
     public Page<MovieDto> getAllMovies(MovieFilterDto filter, Pageable pageable) {
         Page<Movie> movies = movieRepository.findAll(filter.toSpecification(), pageable);
         return movies.map(movieMapper::toDto);
+    }
+
+    public List<MovieDto> getMoviesByIds(BatchMovieRequest batchMovieRequest) {
+        return movieRepository.findAllById(batchMovieRequest.getIds())
+                .stream()
+                .map(movieMapper::toDto)
+                .toList();
     }
 
     public MovieDto getMovieById(Long id) {
