@@ -1,4 +1,4 @@
-package pl.smyk.aggregatorservice;
+package pl.smyk.aggregatorservice.dto;
 
 import lombok.Builder;
 import org.springframework.http.HttpMethod;

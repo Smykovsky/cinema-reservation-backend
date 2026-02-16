@@ -1,5 +1,6 @@
-package pl.smyk.aggregatorservice;
+package pl.smyk.aggregatorservice.service;
 
+import pl.smyk.aggregatorservice.dto.RequestSpec;
 import reactor.core.publisher.Mono;
 
 import java.util.function.BiFunction;

@@ -2,6 +2,7 @@ package pl.smyk.cinemaservice.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +13,7 @@ import pl.smyk.cinemaservice.dto.ScreeningSeatDto;
 import pl.smyk.cinemaservice.dto.UpdateScreeningRequest;
 import pl.smyk.cinemaservice.service.ScreeningService;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -29,6 +31,14 @@ public class ScreeningController {
     @GetMapping("/{id}")
     public ResponseEntity<ScreeningDto> getScreeningById(@PathVariable Long id) {
         return ResponseEntity.ok(screeningService.getScreeningById(id));
+    }
+
+    @GetMapping("/by-cinema-and-date")
+    public ResponseEntity<List<ScreeningDto>> getScreeningsByCinemaAndDate(
+            @RequestParam Long cinemaId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+
+        return ResponseEntity.ok(screeningService.getScreeningsByCinemaAndDate(cinemaId, date));
     }
 
     @PostMapping

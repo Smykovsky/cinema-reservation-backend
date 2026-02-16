@@ -17,6 +17,9 @@ import pl.smyk.cinemaservice.repository.ScreeningRepository;
 import pl.smyk.cinemaservice.repository.ScreeningSeatRepository;
 import pl.smyk.cinemaservice.repository.SeatRepository;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -39,6 +42,16 @@ public class ScreeningService {
     public ScreeningDto getScreeningById(Long id) {
         return screeningRepository.findById(id).map(screeningMapper::toDto)
                 .orElseThrow(() -> new ScreeningNotFoundException("Screening with id " + id + " not found"));
+    }
+
+    public List<ScreeningDto> getScreeningsByCinemaAndDate(Long cinemaId, LocalDate date) {
+        Instant startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant();
+        Instant endOfDay = date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+
+        return screeningRepository.findByCinemaIdAndDateRange(cinemaId, startOfDay, endOfDay)
+                .stream()
+                .map(screeningMapper::toDto)
+                .toList();
     }
 
     @Transactional

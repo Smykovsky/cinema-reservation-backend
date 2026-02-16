@@ -1,8 +1,8 @@
-package pl.smyk.aggregatorservice;
+package pl.smyk.aggregatorservice.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import pl.smyk.aggregatorservice.dto.RequestSpec;
 import reactor.core.publisher.Mono;
 
 import java.util.function.BiFunction;
