@@ -7,6 +7,7 @@ import pl.smyk.bookingservice.client.CinemaServiceFeignClient;
 import pl.smyk.bookingservice.dto.*;
 import pl.smyk.bookingservice.exception.BookingNotFoundException;
 import pl.smyk.bookingservice.exception.InvalidBookingRequestException;
+import pl.smyk.bookingservice.exception.UserBookingsNotFoundException;
 import pl.smyk.bookingservice.kafka.BookingEventProducer;
 import pl.smyk.bookingservice.model.Booking;
 import pl.smyk.bookingservice.model.BookingSeat;
@@ -18,8 +19,10 @@ import pl.smyk.common.dto.BookingEventDto;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset; // New import for Instant conversion
+import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -37,13 +40,29 @@ public class BookingService {
     private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int BOOKING_NUMBER_LENGTH = 8;
     private static final Random random = new Random();
-    private static final int BOOKING_EXPIRATION_MINUTES = 15; // Timeout for booking
+    private static final int BOOKING_EXPIRATION_MINUTES = 15;
 
     private String generateBookingNumber() {
         return random.ints(BOOKING_NUMBER_LENGTH, 0, CHARACTERS.length())
                 .mapToObj(CHARACTERS::charAt)
                 .map(Object::toString)
                 .collect(Collectors.joining());
+    }
+
+    public List<BookingDetailsResponse> getAllUserBookings(Long userId) {
+        List<Booking> bookings = bookingRepository.findByUserId(userId)
+                .orElseThrow(() -> new UserBookingsNotFoundException(
+                        "Nie znaleziono rezerwacji dla użytkownika o ID " + userId
+                ));
+
+        List<BookingDetailsResponse> bookingResponses = bookings.stream()
+                .map(booking -> {
+                    List<BookingSeat> seats = bookingSeatRepository.findByBooking(booking);
+                    return buildBookingDetailsResponse(booking, seats);
+                })
+                .collect(Collectors.toList());
+
+        return bookingResponses;
     }
 
     @Transactional
@@ -53,14 +72,12 @@ public class BookingService {
             throw new InvalidBookingRequestException("Booking request must contain at least one seat.");
         }
 
-        // 1. Pobranie seansu
         ScreeningResponse screening = cinemaServiceFeignClient.getScreeningById(request.getScreeningId());
         if (screening == null) {
             throw new InvalidBookingRequestException(
                     "Screening with ID " + request.getScreeningId() + " not found.");
         }
 
-        // 2. Rezerwacja miejsc w cinema-service
         ReserveSeatsRequest reserveSeatsRequest = ReserveSeatsRequest.builder()
                 .screeningId(request.getScreeningId())
                 .seatIds(request.getSeatIds())
@@ -68,7 +85,6 @@ public class BookingService {
 
         cinemaServiceFeignClient.reserveSeats(request.getScreeningId(), reserveSeatsRequest);
 
-        // 3. Generowanie numeru rezerwacji
         String bookingNumber;
         do {
             bookingNumber = generateBookingNumber();
@@ -102,7 +118,6 @@ public class BookingService {
 
         bookingSeatRepository.saveAll(bookingSeats);
 
-        // ✅ 4. Tworzymy DTO eventowe (nie HTTP response)
         BookingEventDto eventDto = BookingEventDto.builder()
                 .bookingId(savedBooking.getId())
                 .screeningId(savedBooking.getScreeningId())
@@ -112,9 +127,6 @@ public class BookingService {
                         .toInstant())
                 .build();
 
-        bookingEventProducer.sendBookingCreatedEvent(eventDto);
-
-        // 5. Zwracamy normalny response REST
         return buildBookingDetailsResponse(savedBooking, bookingSeats);
     }
 
@@ -149,7 +161,7 @@ public class BookingService {
 
         booking.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
-        bookingEventProducer.sendBookingCancelledEvent(eventDto); // Send event with DTO
+        bookingEventProducer.sendBookingCancelledEvent(eventDto);
         log.info("Booking {} cancelled due to: {}", bookingId, reason);
     }
 
@@ -172,11 +184,10 @@ public class BookingService {
 
             booking.setStatus(BookingStatus.CONFIRMED);
             bookingRepository.save(booking);
-            bookingEventProducer.sendBookingCreatedEvent(eventDto);
+            bookingEventProducer.sendBookingConfirmedEvent(eventDto);
         } else if (booking.getStatus() == BookingStatus.CONFIRMED) {
             log.info("Booking {} is already confirmed. No action needed.", bookingId);
         } else {
-            // Handle case where booking cannot be confirmed (e.g., already cancelled or expired)
             throw new InvalidBookingRequestException("Booking " + bookingId + " cannot be confirmed from its current status: " + booking.getStatus());
         }
     }
@@ -200,9 +211,7 @@ public class BookingService {
             booking.setStatus(BookingStatus.EXPIRED);
             bookingRepository.save(booking);
             bookingEventProducer.sendBookingExpiredEvent(eventDto);
-            // In a real scenario, you might also want to release seats here
         } else {
-            // Handle case where booking cannot be expired (e.g., already confirmed or cancelled)
             throw new InvalidBookingRequestException("Booking " + bookingId + " cannot be expired from its current status: " + booking.getStatus());
         }
     }

@@ -10,5 +10,6 @@ import java.util.Optional;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
     Optional<Booking> findByBookingNumber(String bookingNumber);
+    Optional<List<Booking>> findByUserId(Long userId);
     List<Booking> findByStatusAndExpiresAtBefore(BookingStatus status, LocalDateTime expiresAt);
 }
