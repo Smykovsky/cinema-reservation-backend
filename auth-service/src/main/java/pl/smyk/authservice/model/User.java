@@ -1,5 +1,6 @@
 package pl.smyk.authservice.model;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -23,6 +24,8 @@ public class User implements UserDetails {
     private String password;
     private String firstName;
     private String lastName;
+    @Column(nullable = true, unique = true)
+    private String phoneNumber;
     private Collection<Role> roles;
     private boolean totpEnabled;
     private String totpSecret;

@@ -52,5 +52,8 @@ public class UserService {
 
         Optional.ofNullable(request.getLastName())
                 .ifPresent(user::setLastName);
+
+        Optional.ofNullable(request.getPhoneNumber())
+                .ifPresent(user::setPhoneNumber);
     }
 }
