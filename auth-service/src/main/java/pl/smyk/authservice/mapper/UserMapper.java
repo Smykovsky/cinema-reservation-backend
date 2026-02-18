@@ -17,6 +17,7 @@ public interface UserMapper {
     @Mapping(target = "roles", expression = "java(user.getRoles().stream().map(role -> role.name()).collect(java.util.stream.Collectors.toList()))")
     @Mapping(target = "permissions", expression = "java(user.getRoles().stream().flatMap(role -> role.getPermissions().stream()).map(permission -> permission.name()).distinct().sorted().collect(java.util.stream.Collectors.toList()))")
     @Mapping(source = "totpEnabled", target = "totpEnabled")
+    @Mapping(source = "accountNonLocked", target = "accountNonLocked")
     UserDto userToUserDto(User user);
 
 }

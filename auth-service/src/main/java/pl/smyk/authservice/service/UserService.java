@@ -10,6 +10,7 @@ import pl.smyk.authservice.model.User;
 import pl.smyk.authservice.repository.UserRepository;
 import pl.smyk.common.dto.UserDto;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -21,6 +22,10 @@ public class UserService {
         Optional<User> byId = userRepository.findById(id);
 
         return Optional.ofNullable(UserMapper.INSTANCE.userToUserDto(byId.get()));
+    }
+
+    public List<User> findAllUsers() {
+        return userRepository.findAll();
     }
 
     public Boolean existsByEmail(String email) {

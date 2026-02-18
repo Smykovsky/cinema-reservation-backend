@@ -20,4 +20,5 @@ public class UserDto {
     private String phoneNumber;
 
     private boolean totpEnabled;
+    private boolean isAccountNonLocked;
 }

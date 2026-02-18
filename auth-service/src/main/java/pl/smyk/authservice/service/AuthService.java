@@ -49,7 +49,7 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
-                .roles(List.of(Role.USER, Role.OPERATOR))
+                .roles(List.of(Role.USER))
                 .isAccountNonLocked(true)
                 .build();
 
