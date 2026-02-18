@@ -36,6 +36,12 @@ public class GlobalExceptionController {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<ErrorResponse> handlePasswordNotMatch(AccountLockedException ex) {
+        ErrorResponse error = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+
     // ===== TOTP Exceptions =====
 
     @ExceptionHandler(TotpRequiredException.class)
@@ -62,9 +68,9 @@ public class GlobalExceptionController {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
-        ErrorResponse error = new ErrorResponse("Wystąpił nieoczekiwany błąd serwera");
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-    }
+//    @ExceptionHandler(Exception.class)
+//    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
+//        ErrorResponse error = new ErrorResponse("Wystąpił nieoczekiwany błąd serwera");
+//        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+//    }
 }

@@ -26,7 +26,7 @@ public class User implements UserDetails {
     private Collection<Role> roles;
     private boolean totpEnabled;
     private String totpSecret;
-
+    private boolean isAccountNonLocked;
 
     @Override
     public String getUsername() {
@@ -53,7 +53,7 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return this.isAccountNonLocked;
     }
 
     @Override

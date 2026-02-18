@@ -10,6 +10,7 @@ import pl.smyk.authservice.config.jwt.JwtUtil;
 import pl.smyk.authservice.dto.AuthenticationResponse;
 import pl.smyk.authservice.dto.LoginRequest;
 import pl.smyk.authservice.dto.RegisterRequest;
+import pl.smyk.authservice.exception.AccountLockedException;
 import pl.smyk.authservice.exception.PasswordNotMatchException;
 import pl.smyk.authservice.exception.UserAlreadyExistsException;
 import pl.smyk.authservice.model.User;
@@ -41,6 +42,7 @@ public class AuthService {
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .roles(List.of(Role.USER, Role.OPERATOR))
+                .isAccountNonLocked(true)
                 .build();
 
         userService.saveUser(user);
@@ -51,19 +53,20 @@ public class AuthService {
     }
 
     public AuthenticationResponse login(LoginRequest request) {
-        // Uwierzytelnienie przez Spring Security
+        User user = userService.findByEmail(request.getEmail());
+
+        if (!user.isAccountNonLocked()) {
+            throw new AccountLockedException("Konto zostało zablokowane!");
+        }
+
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
-        User user = userService.findByEmail(request.getEmail());
-
-        // Walidacja TOTP jeśli jest włączony
         if (user.isTotpEnabled()) {
             totpService.validateTotpForLogin(user, request.getCode());
         }
 
-        // Generowanie tokenów
         String accessToken = jwtUtil.generateToken(user);
         String refreshToken = jwtUtil.generateRefreshToken(user);
 
