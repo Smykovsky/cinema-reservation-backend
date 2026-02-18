@@ -47,6 +47,18 @@ public class AuthController {
         userService.updateUser(userId, request);
     }
 
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        AuthenticationResponse authenticationResponse = authService.generateResetToken(request.getEmail());
+        return ResponseEntity.ok(authenticationResponse);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
+        AuthenticationResponse authenticationResponse = authService.resetPassword(request);
+        return ResponseEntity.ok(authenticationResponse);
+    }
+
     @PostMapping("/totp/enable")
     public ResponseEntity<TotpEnableResponse> enableTotp(@RequestHeader("X-User-Email") String email) {
         TotpEnableResponse response = totpService.enableTotp(email);

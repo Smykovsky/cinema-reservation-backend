@@ -18,7 +18,9 @@ public class RouteValidator {
             "/swagger-ui",
 
             "/api/auth/register",
-            "/api/auth/login"
+            "/api/auth/login",
+            "/api/auth/forgot-password",
+            "/api/auth/reset-password"
     );
 
     public static final List<String> operatorRoleEndpoints = List.of(
