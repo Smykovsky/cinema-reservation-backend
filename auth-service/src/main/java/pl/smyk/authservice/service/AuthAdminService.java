@@ -18,8 +18,8 @@ public class AuthAdminService {
     public List<UserDto> getAllUsers() {
         List<User> allUsers = userService.findAllUsers();
         return allUsers.stream()
-                .filter(u -> u.getRoles().stream()
-                        .anyMatch(r -> r.equals(Role.USER) || r.equals(Role.OPERATOR)))
+                .filter(u -> u.getRoles().contains(Role.USER) || u.getRoles().contains(Role.OPERATOR))
+                .filter(u -> !(u.getRoles().contains(Role.USER) && u.getRoles().contains(Role.ADMIN)))
                 .map(UserMapper.INSTANCE::userToUserDto)
                 .toList();
     }

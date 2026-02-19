@@ -75,9 +75,9 @@ public class GlobalExceptionController {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
-//    @ExceptionHandler(Exception.class)
-//    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
-//        ErrorResponse error = new ErrorResponse("Wystąpił nieoczekiwany błąd serwera");
-//        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-//    }
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
+        ErrorResponse error = new ErrorResponse("Wystąpił nieoczekiwany błąd serwera");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
 }
