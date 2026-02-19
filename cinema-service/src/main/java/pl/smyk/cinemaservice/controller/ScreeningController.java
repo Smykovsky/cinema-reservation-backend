@@ -6,11 +6,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import pl.smyk.cinemaservice.dto.CreateScreeningRequest;
-import pl.smyk.cinemaservice.dto.ReserveSeatsRequest; // Import ReserveSeatsRequest
-import pl.smyk.cinemaservice.dto.ScreeningDto;
-import pl.smyk.cinemaservice.dto.ScreeningSeatDto;
-import pl.smyk.cinemaservice.dto.UpdateScreeningRequest;
+import pl.smyk.cinemaservice.dto.*;
 import pl.smyk.cinemaservice.service.ScreeningService;
 
 import java.time.LocalDate;
@@ -42,8 +38,8 @@ public class ScreeningController {
     }
 
     @PostMapping
-    public ResponseEntity<ScreeningDto> createScreening(@Valid @RequestBody CreateScreeningRequest request) {
-        return new ResponseEntity<>(screeningService.createScreening(request), HttpStatus.CREATED);
+    public ResponseEntity<List<ScreeningDto>> createScreenings(@Valid @RequestBody CreateScreeningsRequest request) {
+        return new ResponseEntity<>(screeningService.createScreenings(request), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")

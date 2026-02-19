@@ -33,9 +33,9 @@ public class CinemaService {
 
     @Transactional
     public CinemaDto createCinema(CreateCinemaRequest request) {
-        if (cinemaRepository.existsByName(request.getName())) {
-            throw new CinemaAlreadyExistsException("Cinema with name " + request.getName() + " already exists");
-        }
+//        if (cinemaRepository.existsByName(request.getName())) {
+//            throw new CinemaAlreadyExistsException("Cinema with name " + request.getName() + " already exists");
+//        }
         Cinema cinema = cinemaMapper.toEntity(request);
         return cinemaMapper.toDto(cinemaRepository.save(cinema));
     }

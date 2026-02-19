@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pl.smyk.cinemaservice.dto.CreateSeatRequest;
+import pl.smyk.cinemaservice.dto.CreateSeatsRequest;
 import pl.smyk.cinemaservice.dto.SeatDto;
 import pl.smyk.cinemaservice.dto.UpdateSeatRequest;
 import pl.smyk.cinemaservice.service.SeatService;
@@ -30,8 +31,11 @@ public class SeatController {
     }
 
     @PostMapping
-    public ResponseEntity<SeatDto> createSeat(@Valid @RequestBody CreateSeatRequest request) {
-        return new ResponseEntity<>(seatService.createSeat(request), HttpStatus.CREATED);
+    public ResponseEntity<List<SeatDto>> createSeats(
+            @Valid @RequestBody CreateSeatsRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(seatService.createSeats(request.getSeats()));
     }
 
     @PutMapping("/{id}")

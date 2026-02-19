@@ -17,10 +17,8 @@ import java.util.List;
 @Repository
 
 public interface SeatRepository extends JpaRepository<Seat, Long> {
-
+    List<Seat> findAllByHallId(Long hallId);
     boolean existsByHallIdAndRowAndNumber(Long hallId, Integer row, Integer number);
-
-
 
     List<Seat> findByHall(Hall hall);
 

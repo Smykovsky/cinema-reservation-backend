@@ -15,8 +15,7 @@ import pl.smyk.cinemaservice.model.Seat;
 import pl.smyk.cinemaservice.repository.HallRepository;
 import pl.smyk.cinemaservice.repository.SeatRepository;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -36,17 +35,51 @@ public class SeatService {
     }
 
     @Transactional
-    public SeatDto createSeat(CreateSeatRequest request) {
-        if (seatRepository.existsByHallIdAndRowAndNumber(request.getHallId(), request.getRow(), request.getNumber())) {
-            throw new SeatAlreadyExistsException("Seat with row " + request.getRow() + " and number " + request.getNumber() + " already exists in hall with id " + request.getHallId());
+    public List<SeatDto> createSeats(List<CreateSeatRequest> requests) {
+
+        Set<String> uniqueCheck = new HashSet<>();
+        for (CreateSeatRequest r : requests) {
+            String key = r.getHallId() + "_" + r.getRow() + "_" + r.getNumber();
+            if (!uniqueCheck.add(key)) {
+                throw new SeatAlreadyExistsException(
+                        "Duplicate seat in request: hall=" + r.getHallId()
+                                + ", row=" + r.getRow()
+                                + ", number=" + r.getNumber()
+                );
+            }
         }
-        return hallRepository.findById(request.getHallId())
-                .map(hall -> {
-                    Seat seat = seatMapper.toEntity(request);
-                    seat.setHall(hall);
-                    return seatMapper.toDto(seatRepository.save(seat));
-                })
-                .orElseThrow(() -> new HallNotFoundException("Hall with id " + request.getHallId() + " not found"));
+
+        List<Seat> seatsToSave = new ArrayList<>();
+
+        for (CreateSeatRequest request : requests) {
+
+            if (seatRepository.existsByHallIdAndRowAndNumber(
+                    request.getHallId(),
+                    request.getRow(),
+                    request.getNumber())) {
+
+                throw new SeatAlreadyExistsException(
+                        "Seat with row " + request.getRow()
+                                + " and number " + request.getNumber()
+                                + " already exists in hall with id "
+                                + request.getHallId());
+            }
+
+            Hall hall = hallRepository.findById(request.getHallId())
+                    .orElseThrow(() ->
+                            new HallNotFoundException(
+                                    "Hall with id " + request.getHallId() + " not found"));
+
+            Seat seat = seatMapper.toEntity(request);
+            seat.setHall(hall);
+
+            seatsToSave.add(seat);
+        }
+
+        return seatRepository.saveAll(seatsToSave)
+                .stream()
+                .map(seatMapper::toDto)
+                .toList();
     }
 
     @Transactional

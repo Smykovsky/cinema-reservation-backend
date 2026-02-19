@@ -55,9 +55,17 @@ public class ScreeningService {
     }
 
     @Transactional
-    public ScreeningDto createScreening(CreateScreeningRequest request) {
-        if (!screeningRepository.findByHallIdAndStartTimeBeforeAndEndTimeAfter(request.getHallId(), request.getEndTime(), request.getStartTime()).isEmpty()) {
-            throw new ScreeningAlreadyExistsException("Screening overlaps with another screening in hall with id " + request.getHallId());
+    public List<ScreeningDto> createScreenings(CreateScreeningsRequest request) {
+        return request.getScreenings().stream()
+                .map(this::doCreateScreening)
+                .toList();
+    }
+
+    private ScreeningDto doCreateScreening(CreateScreeningRequest request) {
+        if (!screeningRepository.findByHallIdAndStartTimeBeforeAndEndTimeAfter(
+                request.getHallId(), request.getEndTime(), request.getStartTime()).isEmpty()) {
+            throw new ScreeningAlreadyExistsException(
+                    "Screening overlaps with another screening in hall with id " + request.getHallId());
         }
 
         return hallRepository.findById(request.getHallId())
@@ -68,7 +76,8 @@ public class ScreeningService {
 
                     List<Seat> seatsInHall = seatRepository.findByHall(hall);
                     if (seatsInHall.isEmpty()) {
-                        throw new HallHasNoSeatsException("Hall with id " + hall.getId() + " has no seats defined. Cannot create screening.");
+                        throw new HallHasNoSeatsException(
+                                "Hall with id " + hall.getId() + " has no seats defined. Cannot create screening.");
                     }
 
                     List<ScreeningSeat> newScreeningSeats = seatsInHall.stream()
@@ -82,7 +91,8 @@ public class ScreeningService {
                     savedScreening.getScreeningSeats().addAll(newScreeningSeats);
                     return screeningMapper.toDto(savedScreening);
                 })
-                .orElseThrow(() -> new HallNotFoundException("Hall with id " + request.getHallId() + " not found"));
+                .orElseThrow(() -> new HallNotFoundException(
+                        "Hall with id " + request.getHallId() + " not found"));
     }
 
     @Transactional
