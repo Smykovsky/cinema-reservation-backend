@@ -21,7 +21,7 @@ public class CreateSeatRequest {
 
     @NotNull(message = "Number cannot be null")
     @Min(value = 1, message = "Number must be at least 1")
-    @Max(value = 10, message = "Number cannot exceed 10")
+    @Max(value = 20, message = "Number cannot exceed 20")
     Integer number;
 
     @NotNull(message = "Seat type cannot be null")

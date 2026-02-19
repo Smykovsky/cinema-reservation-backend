@@ -33,7 +33,7 @@ public class Seat {
 
     @Column(nullable = false)
     @Min(1)
-    @Max(10)
+    @Max(20)
     private Integer number; // 1, 2, 3...
 
     @Enumerated(EnumType.STRING)
