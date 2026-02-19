@@ -99,7 +99,7 @@ public class AuthService {
                 .filter(t -> !t.isUsed())
                 .filter(t -> t.getExpiresAt().isAfter(LocalDateTime.now()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Token jest nieważny lub wygasł"));
+                .orElseThrow(() -> new ResetTokenExpiredException("Token resetu hasła wygasł!"));
 
 
         User user = token.getUser();
@@ -109,6 +109,17 @@ public class AuthService {
         token.setUsed(true);
         passwordResetTokenRepository.save(token);
         return AuthenticationResponse.builder().message("Pomyślnie ustawiono hasło!").build();
+    }
+
+    public boolean validatePasswordResetToken(String token) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findAll().stream()
+                .filter(t -> passwordEncoder.matches(token, t.getTokenHash()))
+                .filter(t -> !t.isUsed())
+                .filter(t -> t.getExpiresAt().isAfter(LocalDateTime.now()))
+                .findFirst()
+                .orElseThrow(() -> new ResetTokenExpiredException("Token wygasł lub jest nieprawidłowy!"));
+
+        return true;
     }
 
 

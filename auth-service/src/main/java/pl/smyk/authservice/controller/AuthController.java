@@ -59,6 +59,12 @@ public class AuthController {
         return ResponseEntity.ok(authenticationResponse);
     }
 
+    @GetMapping("/reset-password/validate/{token}")
+    public ResponseEntity<?> validatePasswordResetToken(@PathVariable String token) {
+        boolean b = authService.validatePasswordResetToken(token);
+        return ResponseEntity.ok(b);
+    }
+
     @PostMapping("/totp/enable")
     public ResponseEntity<TotpEnableResponse> enableTotp(@RequestHeader("X-User-Email") String email) {
         TotpEnableResponse response = totpService.enableTotp(email);

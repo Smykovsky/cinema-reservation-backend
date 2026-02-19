@@ -75,6 +75,12 @@ public class GlobalExceptionController {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
+    @ExceptionHandler(ResetTokenExpiredException.class)
+    public ResponseEntity<ErrorResponse> handleResetTokenExpiredException(ResetTokenExpiredException ex) {
+        ErrorResponse error = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
         ErrorResponse error = new ErrorResponse("Wystąpił nieoczekiwany błąd serwera");

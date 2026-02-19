@@ -6,4 +6,5 @@ import pl.smyk.authservice.model.PasswordResetToken;
 
 @Repository
 public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken, Long> {
+    public PasswordResetToken findByTokenHash(String token);
 }
