@@ -234,6 +234,7 @@ public class PaymentService {
                 PaymentCompletedEvent build = PaymentCompletedEvent.builder()
                         .paymentId(payment.getId())
                         .bookingId(payment.getBookingId())
+                        .bookingNumber(payment.getBookingNumber())
                         .amount(payment.getAmount())
                         .paymentMethod(payment.getPaymentMethod())
                         .providerTransactionId(payment.getProviderTransactionId())

@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 public class PaymentCompletedEvent {
     private Long paymentId;
     private Long bookingId;
+    private String bookingNumber;
     private BigDecimal amount;
     private String paymentMethod;
     private String providerTransactionId;

@@ -8,6 +8,7 @@ import pl.smyk.common.dto.PaymentCompletedEvent;
 import pl.smyk.common.dto.PaymentFailedEvent;
 import pl.smyk.common.dto.PaymentRefundedEvent;
 import pl.smyk.notificationservice.dto.EmailRequest;
+import pl.smyk.notificationservice.dto.SmsRequest;
 import pl.smyk.notificationservice.service.EmailService;
 import pl.smyk.notificationservice.service.SmsService;
 
@@ -28,7 +29,7 @@ public class PaymentEventsConsumer {
         emailRequest.setTitle("Status płatności");
         emailService.sendEmail(emailRequest);
 
-//        SmsRequest request = new SmsRequest("513108441", "Pomyślnie oplacono rezerwacje");
+//        SmsRequest request = new SmsRequest(paymentCompletedEvent.getUserData().getPhoneNumber(), "Pomyślnie oplacono rezerwacje: " + paymentCompletedEvent.getBookingNumber());
 //        smsService.sendSms(request);
     }
 
