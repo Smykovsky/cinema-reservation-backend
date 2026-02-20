@@ -36,18 +36,12 @@ public class ScreeningAggregatorController {
     @Value("${gateway-url}")
     private String movieBaseUrl;
 
-    @GetMapping("/test")
-    public String test() {
-        return "Test";
-    }
-
     @GetMapping("/screenings")
     public Mono<ResponseEntity<List<ScreeningDetailsDto>>> getAllScreeningsWithDetails(
             @RequestParam Long cinemaId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             HttpServletRequest request) {
 
-        String authHeader = request.getHeader("Authorization");
         WebClient webClient = webClientBuilder.build();
 
         // 1. Pobierz listę screeningów
@@ -55,7 +49,6 @@ public class ScreeningAggregatorController {
                 .get()
                 .uri(screeningBaseUrl + "/api/screening/by-cinema-and-date?cinemaId={cinemaId}&date={date}",
                         cinemaId, date.toString())
-                .header("Authorization", authHeader)
                 .retrieve()
                 .bodyToFlux(ScreeningDto.class)
                 .collectList();
@@ -68,7 +61,6 @@ public class ScreeningAggregatorController {
                                     .url(screeningBaseUrl + "/api/screening/{id}")
                                     .method(HttpMethod.GET)
                                     .pathVariables(Map.of("id", screening.getId()))
-                                    .headers(Map.of("Authorization", authHeader))
                                     .responseType(ScreeningDto.class)
                                     .build();
 
@@ -78,7 +70,6 @@ public class ScreeningAggregatorController {
                                     .url(movieBaseUrl + "/api/movie/{id}")
                                     .method(HttpMethod.GET)
                                     .pathVariables(Map.of("id", s.getMovieId()))
-                                    .headers(Map.of("Authorization", authHeader))
                                     .responseType(MovieDto.class)
                                     .build(),
                             ScreeningDetailsDto::new
@@ -93,14 +84,11 @@ public class ScreeningAggregatorController {
             @PathVariable Long id,
             HttpServletRequest request) {
 
-        String authHeader = request.getHeader("Authorization");
-
         RequestSpec<ScreeningDto> screeningRequest =
                 RequestSpec.<ScreeningDto>builder()
                         .url(screeningBaseUrl + "/api/screening/{id}")
                         .method(HttpMethod.GET)
                         .pathVariables(Map.of("id", id))
-                        .headers(Map.of("Authorization", authHeader))
                         .responseType(ScreeningDto.class)
                         .build();
 
@@ -110,7 +98,6 @@ public class ScreeningAggregatorController {
                         .url(movieBaseUrl + "/api/movie/{id}")
                         .method(HttpMethod.GET)
                         .pathVariables(Map.of("id", screening.getMovieId()))
-                        .headers(Map.of("Authorization", authHeader))
                         .responseType(MovieDto.class)
                         .build(),
                 ScreeningDetailsDto::new

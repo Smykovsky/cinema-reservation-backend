@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pl.smyk.cinemaservice.dto.*;
 import pl.smyk.cinemaservice.service.ScreeningService;
@@ -37,11 +38,13 @@ public class ScreeningController {
         return ResponseEntity.ok(screeningService.getScreeningsByCinemaAndDate(cinemaId, date));
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<List<ScreeningDto>> createScreenings(@Valid @RequestBody CreateScreeningsRequest request) {
         return new ResponseEntity<>(screeningService.createScreenings(request), HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<ScreeningDto> updateScreening(@PathVariable Long id, @Valid @RequestBody UpdateScreeningRequest request) {
         if (!id.equals(request.getId())) {
@@ -50,6 +53,7 @@ public class ScreeningController {
         return ResponseEntity.ok(screeningService.updateScreening(request));
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteScreening(@PathVariable Long id) {
         screeningService.deleteScreening(id);
@@ -67,7 +71,7 @@ public class ScreeningController {
         return ResponseEntity.ok(screeningService.getAvailableSeatsForScreening(id));
     }
 
-    @GetMapping("/{id}/seats") // New endpoint to get all seats
+    @GetMapping("/{id}/seats")
     public ResponseEntity<List<ScreeningSeatDto>> getAllSeatsForScreening(@PathVariable Long id) {
         return ResponseEntity.ok(screeningService.getAllSeatsForScreening(id));
     }

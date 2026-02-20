@@ -9,6 +9,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pl.smyk.common.dto.BatchMovieRequest;
 import pl.smyk.common.dto.MovieDto;
@@ -45,6 +46,7 @@ public class MovieController {
         return ResponseEntity.ok(movieService.getMoviesByIds(batchMovieRequest));
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<MovieDto> createMovie(
             @RequestPart("movie") @Valid CreateMovieRequest createMovieRequest,
@@ -52,6 +54,7 @@ public class MovieController {
         return ResponseEntity.status(HttpStatus.CREATED).body(movieService.createMovie(createMovieRequest, imageFile));
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PutMapping
     public ResponseEntity<MovieDto> updateMovie(
             @RequestPart("movie") @Valid UpdateMovieRequest updateMovieRequest,
@@ -59,6 +62,7 @@ public class MovieController {
         return ResponseEntity.ok(movieService.updateMovie(updateMovieRequest, imageFile));
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteMovie(@PathVariable Long id) {
         movieService.deleteMovie(id);

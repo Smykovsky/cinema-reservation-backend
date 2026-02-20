@@ -1,5 +1,6 @@
 package pl.smyk.apigateway.filter;
 
+import org.springframework.http.HttpMethod;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 
@@ -27,10 +28,35 @@ public class RouteValidator {
             "/api/movie/management"
     );
 
-    public Predicate<ServerHttpRequest> isSecured =
-            request -> openApiEndpoints
-                    .stream()
-                    .noneMatch(uri -> request.getURI().getPath().contains(uri));
+    public Predicate<ServerHttpRequest> isSecured = request -> {
+
+        String path = request.getURI().getPath();
+        HttpMethod method = request.getMethod();
+
+        boolean isPublicGet =
+                method == HttpMethod.GET && (
+                        path.matches("^/api/aggregator/screenings$") ||
+                                path.matches("^/api/aggregator/screening-details/\\d+$") ||
+                                path.matches("^/api/cinema$") ||
+                                path.matches("^/api/cinema/\\d+$") ||
+                                path.matches("^/api/hall$") ||
+                                path.matches("^/api/hall/\\d+$") ||
+                                path.matches("^/api/screening$") ||
+                                path.matches("^/api/screening/\\d+$") ||
+                                path.matches("^/api/screening/by-cinema-and-date$") ||
+                                path.matches("^/api/seat$") ||
+                                path.matches("^/api/seat/\\d+$") ||
+                                path.matches("^/api/movie/\\d+$") ||
+                                path.matches("^/api/movie$")
+                );
+
+        boolean isAuthEndpoint =
+                openApiEndpoints
+                        .stream()
+                        .anyMatch(uri -> path.startsWith(uri));
+
+        return !(isPublicGet || isAuthEndpoint);
+    };
 
     public Predicate<ServerHttpRequest> requiresOperatorRole =
             request -> operatorRoleEndpoints

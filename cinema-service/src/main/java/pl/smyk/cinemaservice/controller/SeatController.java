@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pl.smyk.cinemaservice.dto.CreateSeatRequest;
 import pl.smyk.cinemaservice.dto.CreateSeatsRequest;
@@ -30,6 +31,7 @@ public class SeatController {
         return ResponseEntity.ok(seatService.getSeatById(id));
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<List<SeatDto>> createSeats(
             @Valid @RequestBody CreateSeatsRequest request) {
@@ -38,6 +40,7 @@ public class SeatController {
                 .body(seatService.createSeats(request.getSeats()));
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<SeatDto> updateSeat(@PathVariable Long id, @Valid @RequestBody UpdateSeatRequest request) {
         if (!id.equals(request.getId())) {
@@ -46,6 +49,7 @@ public class SeatController {
         return ResponseEntity.ok(seatService.updateSeat(request));
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSeat(@PathVariable Long id) {
         seatService.deleteSeat(id);

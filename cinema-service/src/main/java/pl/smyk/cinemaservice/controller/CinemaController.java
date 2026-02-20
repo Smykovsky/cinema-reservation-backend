@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pl.smyk.cinemaservice.dto.CinemaDto;
 import pl.smyk.cinemaservice.dto.CreateCinemaRequest;
@@ -29,11 +30,13 @@ public class CinemaController {
         return ResponseEntity.ok(cinemaService.getCinemaById(id));
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<CinemaDto> createCinema(@Valid @RequestBody CreateCinemaRequest request) {
         return new ResponseEntity<>(cinemaService.createCinema(request), HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<CinemaDto> updateCinema(@PathVariable Long id, @Valid @RequestBody UpdateCinemaRequest request) {
         // Ensure the ID in the path matches the ID in the request body
@@ -43,6 +46,7 @@ public class CinemaController {
         return ResponseEntity.ok(cinemaService.updateCinema(request));
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCinema(@PathVariable Long id) {
         cinemaService.deleteCinema(id);
