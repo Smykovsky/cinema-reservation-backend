@@ -3,12 +3,13 @@ package pl.smyk.cinemaservice.dto;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import lombok.Builder;
-import lombok.Value;
+import lombok.*;
 import pl.smyk.cinemaservice.model.SeatType;
 
-@Value
 @Builder
+@Data
+@RequiredArgsConstructor
+@AllArgsConstructor
 public class UpdateSeatRequest {
     @NotNull(message = "Seat ID cannot be null")
     Long id;

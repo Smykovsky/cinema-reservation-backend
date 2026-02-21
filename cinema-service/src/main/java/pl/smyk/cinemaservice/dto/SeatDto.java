@@ -1,11 +1,12 @@
 package pl.smyk.cinemaservice.dto;
 
-import lombok.Builder;
-import lombok.Value;
+import lombok.*;
 import pl.smyk.cinemaservice.model.SeatType;
 
-@Value
 @Builder
+@Data
+@RequiredArgsConstructor
+@AllArgsConstructor
 public class SeatDto {
     Long id;
     Long hallId;

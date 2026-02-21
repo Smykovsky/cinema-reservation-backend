@@ -3,15 +3,16 @@ package pl.smyk.cinemaservice.dto;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
-import lombok.Builder;
-import lombok.Value;
+import lombok.*;
 import pl.smyk.cinemaservice.model.ScreeningStatus;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 
-@Value
 @Builder
+@Data
+@RequiredArgsConstructor
+@AllArgsConstructor
 public class UpdateScreeningRequest {
     @NotNull(message = "Screening ID cannot be null")
     Long id;

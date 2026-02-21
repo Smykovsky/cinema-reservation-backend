@@ -1,13 +1,14 @@
 package pl.smyk.cinemaservice.dto;
 
-import lombok.Builder;
-import lombok.Value;
+import lombok.*;
 
 import java.time.Instant;
 import java.util.List;
 
-@Value
 @Builder
+@Data
+@RequiredArgsConstructor
+@AllArgsConstructor
 public class CinemaDto {
     Long id;
     String name;

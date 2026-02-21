@@ -3,12 +3,13 @@ package pl.smyk.cinemaservice.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import lombok.Builder;
-import lombok.Value;
+import lombok.*;
 import org.hibernate.validator.constraints.Length;
 
-@Value
 @Builder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class UpdateCinemaRequest {
     @NotNull(message = "Cinema ID cannot be null")
     Long id;

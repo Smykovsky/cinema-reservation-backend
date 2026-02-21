@@ -3,14 +3,14 @@ package pl.smyk.cinemaservice.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import lombok.Builder;
-import lombok.Value;
+import lombok.*;
 import lombok.extern.jackson.Jacksonized;
 import org.hibernate.validator.constraints.Length;
 
-@Jacksonized
-@Value
 @Builder
+@Data
+@RequiredArgsConstructor
+@AllArgsConstructor
 public class CreateCinemaRequest {
     @NotBlank(message = "Cinema name cannot be blank")
     @Length(max = 255, message = "Cinema name cannot exceed 255 characters")
